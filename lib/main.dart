@@ -153,7 +153,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 // This is called when the user selects an item.
                 setState(() {
                   _traitItem = value!;
-                  _traits = _traitsList.indexOf(value!);
+                  _traits = _traitsList.indexOf(value);
                 });
               },
             ),
