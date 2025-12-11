@@ -55,8 +55,28 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
-  int traits = 0;
-  int creature = 0;
+  final List<String> _traitsList = <String>["Random", "1", "2", "3", "4", "5"];
+  late String _traitItem = _traitsList.first;
+  late int _traits = 0;
+  final List<String> _creatureList = <String>[
+    "Random",
+    'Aberration',
+    'Beast',
+    'Celestial',
+    'Construct',
+    "Dragon",
+    "Elemental",
+    "Fey",
+    "Fiend",
+    "Giant",
+    "Humanoid",
+    "Monstrosity",
+    "Ooze",
+    "Plant",
+    "Undead",
+  ];
+  late String _creatureType = _creatureList.first;
+  int _actions = 0;
 
   void _incrementCounter() {
     setState(() {
@@ -106,9 +126,44 @@ class _MyHomePageState extends State<MyHomePage> {
           // wireframe for each widget.
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            DropdownButton<String>(
+              value: _creatureType,
+              items: _creatureList.map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+              onChanged: (String? value) {
+                // This is called when the user selects an item.
+                setState(() {
+                  _creatureType = value!;
+                });
+              },
+            ),
+            DropdownButton<String>(
+              value: _traitItem,
+              items: _traitsList.map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+              onChanged: (String? value) {
+                // This is called when the user selects an item.
+                setState(() {
+                  _traitItem = value!;
+                  _traits = _traitsList.indexOf(value!);
+                });
+              },
+            ),
             const Text('You have pushed the button this many times:'),
             Text(
-              '$_counter',
+              '$_creatureType',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            Text(
+              '$_traits',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
           ],
