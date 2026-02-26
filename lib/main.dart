@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:proyecto_chachipistachi_dnd/battleScreen.dart';
+import 'package:proyecto_chachipistachi_dnd/pantallas/battleScreen.dart';
+import 'package:proyecto_chachipistachi_dnd/pantallas/apiScreen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -19,6 +20,7 @@ class MyApp extends StatelessWidget {
       routes: {
         "/": (context) => MyHomePage(),
         "/battlescreen": (context) => Battlescreen(),
+        "/api": (context) => ApiScreen(),
       },
     );
   }
@@ -57,9 +59,14 @@ class _MyHomePageState extends State<MyHomePage> {
             child: Text("Generar criatura"),
           ),
           TextButton(
+            onPressed: () => Navigator.pushNamed(context, "/api"),
+            child: Text("Api"),
+          ),
+          TextButton(
             onPressed: () => Navigator.pushNamed(context, "/"),
             child: Text("Repositorio"),
           ),
+
         ],
       ),
     );
