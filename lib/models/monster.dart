@@ -1,15 +1,13 @@
-import 'dart:ffi';
-
 class MonsterList {
-  Int? count;
-  List<Map<String,String>>? results;
+  int count;
+  List<Map<String, dynamic>>? results;
 
-  MonsterList({this.count,this.results});
+  MonsterList({required this.count,this.results});
 
   factory MonsterList.fromJson(Map<String, dynamic> json) {
     return MonsterList(
       count: json["count"],
-      results: json["results"],
+      results: List<Map<String, dynamic>>.from(json['results']),
     );
   }
 }

@@ -28,10 +28,10 @@ class _ApiScreenState extends State<ApiScreen> {
           return CircularProgressIndicator();
         }
         if (snapshot.hasData) {
-          MonsterList monstros = snapshot.data;
+          MonsterList monstros = snapshot.data ?? MonsterList(count: 0);
 
           return ListView.builder(itemBuilder: (context, index) {
-            return Card(child: Text(monstros[index].name.toString()),);
+            return Card(child: Text(monstros.results![index]["name"].toString()),);
           });
         }
         else if (snapshot.hasError) {

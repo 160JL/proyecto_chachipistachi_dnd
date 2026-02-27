@@ -11,7 +11,7 @@ class ConnectionService {
 
     if (response.statusCode == 200) {
       final List data = jsonDecode(response.body);
-      return data.map((json) => MonsterList.fromJson(json)).toList();
+      return data.map((json) => MonsterList.fromJson(json)).toList().first;
     } else {
       throw Exception('Error al cargar los Eventos');
     }
