@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:proyecto_chachipistachi_dnd/models/monster.dart';
 import 'package:proyecto_chachipistachi_dnd/service/connection_service.dart';
+import 'package:proyecto_chachipistachi_dnd/pantallas/monster_create_screen.dart';
 
 /// Pantalla que muestra la ficha detallada de una criatura.
 class MonsterDetailScreen extends StatefulWidget {
-  final String monsterUrl; // URL para obtener los datos completos.
+  final String?
+  monsterUrl; // URL para obtener los datos completos (opcional si se pasa el objeto).
   final String monsterName; // Nombre de la criatura para el título.
+  final Monster? monster; // Objeto Monster directo (opcional para local).
+  final int?
+  monsterIndex; // Índice en el almacenamiento local si es una criatura guardada.
 
   const MonsterDetailScreen({
     super.key,
-    required this.monsterUrl,
+    this.monsterUrl,
     required this.monsterName,
+    this.monster,
+    this.monsterIndex,
   });
 
   @override
@@ -20,12 +28,60 @@ class MonsterDetailScreen extends StatefulWidget {
 class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
   // Future que contendrá el objeto Monster con todos sus datos.
   late Future<Monster> futureMonster;
+  Monster? _currentMonster;
 
   @override
   void initState() {
     super.initState();
-    // Iniciamos la descarga de detalles al entrar en la pantalla.
-    futureMonster = ConnectionService().fetchMonsterDetail(widget.monsterUrl);
+    // Si ya tenemos el monstruo (local), lo usamos en el Future.
+    if (widget.monster != null) {
+      futureMonster = Future.value(widget.monster!);
+      _currentMonster = widget.monster;
+    } else if (widget.monsterUrl != null) {
+      // Iniciamos la descarga de detalles al entrar en la pantalla si tenemos URL.
+      futureMonster = ConnectionService().fetchMonsterDetail(
+        widget.monsterUrl!,
+      );
+    } else {
+      futureMonster = Future.error(
+        "No se proporcionó URL ni objeto de criatura",
+      );
+    }
+  }
+
+  Widget _buildMonsterImage(String? imagePath) {
+    if (imagePath == null || imagePath.isEmpty) return const SizedBox.shrink();
+
+    if (imagePath.startsWith('http')) {
+      return Image.network(
+        imagePath,
+        height: 250,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) =>
+            const Icon(Icons.broken_image, size: 100),
+      );
+    } else if (imagePath.startsWith('/api/images/')) {
+      return Image.network(
+        "https://www.dnd5eapi.co$imagePath",
+        height: 250,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) =>
+            const Icon(Icons.broken_image, size: 100),
+      );
+    } else {
+      // Asumimos que es una ruta de archivo local
+      final file = File(imagePath);
+      if (file.existsSync()) {
+        return Image.file(
+          file,
+          height: 250,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) =>
+              const Icon(Icons.broken_image, size: 100),
+        );
+      }
+    }
+    return const Icon(Icons.broken_image, size: 100);
   }
 
   @override
@@ -33,6 +89,41 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.monsterName),
+        actions: [
+          if (_currentMonster != null)
+            TextButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MonsterCreateScreen(
+                      baseMonster: _currentMonster,
+                      isEditing: widget.monster != null,
+                      monsterIndex: widget.monsterIndex,
+                    ),
+                  ),
+                ).then((saved) {
+                  if (saved == true) {
+                    Navigator.pop(
+                      context,
+                      true,
+                    ); // Cerramos detalles y avisamos al repositorio para recargar.
+                  }
+                });
+              },
+              icon: Icon(
+                widget.monster != null ? Icons.edit : Icons.copy,
+                color: Colors.white,
+              ),
+              label: Text(
+                widget.monster != null ? 'EDITAR' : 'USAR COMO BASE',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+        ],
       ),
       body: FutureBuilder<Monster>(
         future: futureMonster,
@@ -40,33 +131,32 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
           // Indicador de carga central mientras se obtienen los datos.
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
-          } 
+          }
           // Manejo de errores en la obtención de detalles.
           else if (snapshot.hasError) {
             print('Error cargando detalles: ${snapshot.error}');
             return Center(child: Text('Error: ${snapshot.error}'));
-          } 
+          }
           // Si tenemos los datos del monstruo, construimos la interfaz.
           else if (snapshot.hasData) {
             final monster = snapshot.data!;
+            // Actualizamos el monstruo actual para el botón de la AppBar.
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && _currentMonster == null) {
+                setState(() {
+                  _currentMonster = monster;
+                });
+              }
+            });
             return SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Imagen principal de la criatura (si existe en la API).
-                  if (monster.image != null)
-                    Center(
-                      child: Image.network(
-                        "https://www.dnd5eapi.co${monster.image}",
-                        height: 250,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Icon(Icons.broken_image, size: 100),
-                      ),
-                    ),
+                  // Imagen principal de la criatura.
+                  Center(child: _buildMonsterImage(monster.image)),
                   const SizedBox(height: 16),
-                  
+
                   // Encabezado: Nombre y Descripción básica (Tamaño, Tipo, Alineamiento).
                   Text(
                     monster.name ?? "Sin nombre",
@@ -77,18 +167,30 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
                   ),
                   Text(
                     "${monster.size} ${monster.type}, ${monster.alignment}",
-                    style: const TextStyle(fontStyle: FontStyle.italic, fontSize: 16),
+                    style: const TextStyle(
+                      fontStyle: FontStyle.italic,
+                      fontSize: 16,
+                    ),
                   ),
                   const Divider(thickness: 2, color: Colors.brown),
 
                   // Sección de Estadísticas Básicas.
-                  _buildDetailRow("Clase de Armadura", _formatArmorClass(monster.armorClass)),
-                  _buildDetailRow("Puntos de Vida", "${monster.hitPoints} (${monster.hitDice})"),
+                  _buildDetailRow(
+                    "Clase de Armadura",
+                    _formatArmorClass(monster.armorClass),
+                  ),
+                  _buildDetailRow(
+                    "Puntos de Vida",
+                    "${monster.hitPoints} (${monster.hitDice})",
+                  ),
                   _buildDetailRow("Velocidad", _formatSpeed(monster.speed)),
                   const Divider(),
 
                   // Bloque de Atributos principales con sus modificadores calculados.
-                  const Text("Atributos", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  const Text(
+                    "Atributos",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -104,47 +206,100 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
                   const Divider(),
 
                   // Competencias (Saving Throws y Skills).
-                  if (monster.proficiencies != null && monster.proficiencies!.isNotEmpty)
-                    _buildSection("Competencias", _formatProficiencies(monster.proficiencies)),
+                  if (monster.proficiencies != null &&
+                      monster.proficiencies!.isNotEmpty)
+                    _buildSection(
+                      "Competencias",
+                      _formatProficiencies(monster.proficiencies),
+                    ),
 
                   // Listado de Resistencias, Vulnerabilidades e Inmunidades.
                   if (monster.damageVulnerabilities?.isNotEmpty ?? false)
-                    _buildSection("Vulnerabilidades al Daño", monster.damageVulnerabilities!.join(", ")),
+                    _buildSection(
+                      "Vulnerabilidades al Daño",
+                      monster.damageVulnerabilities!.join(", "),
+                    ),
                   if (monster.damageResistances?.isNotEmpty ?? false)
-                    _buildSection("Resistencias al Daño", monster.damageResistances!.join(", ")),
+                    _buildSection(
+                      "Resistencias al Daño",
+                      monster.damageResistances!.join(", "),
+                    ),
                   if (monster.damageImmunities?.isNotEmpty ?? false)
-                    _buildSection("Inmunidades al Daño", monster.damageImmunities!.join(", ")),
+                    _buildSection(
+                      "Inmunidades al Daño",
+                      monster.damageImmunities!.join(", "),
+                    ),
                   if (monster.conditionImmunities?.isNotEmpty ?? false)
-                    _buildSection("Inmunidades a Condición", monster.conditionImmunities!.map((e) => e.name).join(", ")),
+                    _buildSection(
+                      "Inmunidades a Condición",
+                      monster.conditionImmunities!
+                          .map((e) => e.name)
+                          .join(", "),
+                    ),
 
                   // Otros datos de interés: Sentidos, Idiomas y Desafío (CR).
                   _buildSection("Sentidos", _formatSenses(monster.senses)),
                   _buildSection("Idiomas", monster.languages ?? "Ninguno"),
-                  _buildSection("Desafío", "${monster.challengeRating} (${monster.xp} XP)"),
+                  _buildSection(
+                    "Desafío",
+                    "${monster.challengeRating} (${monster.xp} XP)",
+                  ),
                   const Divider(thickness: 2, color: Colors.brown),
 
                   // Listado de Habilidades Especiales (Pasivas).
-                  if (monster.specialAbilities != null && monster.specialAbilities!.isNotEmpty) ...[
-                    const Text("Habilidades Especiales", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.brown)),
-                    ...monster.specialAbilities!.map((ability) => _buildActionItem(ability.name, ability.desc)),
+                  if (monster.specialAbilities != null &&
+                      monster.specialAbilities!.isNotEmpty) ...[
+                    const Text(
+                      "Habilidades Especiales",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        color: Colors.brown,
+                      ),
+                    ),
+                    ...monster.specialAbilities!.map(
+                      (ability) => _buildActionItem(ability.name, ability.desc),
+                    ),
                   ],
 
                   // Listado de Acciones de combate.
-                  if (monster.actions != null && monster.actions!.isNotEmpty) ...[
+                  if (monster.actions != null &&
+                      monster.actions!.isNotEmpty) ...[
                     const SizedBox(height: 16),
-                    const Text("Acciones", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.brown)),
-                    ...monster.actions!.map((action) => _buildActionItem(action.name, action.desc)),
+                    const Text(
+                      "Acciones",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        color: Colors.brown,
+                      ),
+                    ),
+                    ...monster.actions!.map(
+                      (action) => _buildActionItem(action.name, action.desc),
+                    ),
                   ],
 
                   // Listado de Acciones Legendarias (si la criatura dispone de ellas).
-                  if (monster.legendaryActions != null && monster.legendaryActions!.isNotEmpty) ...[
+                  if (monster.legendaryActions != null &&
+                      monster.legendaryActions!.isNotEmpty) ...[
                     const SizedBox(height: 16),
-                    const Text("Acciones Legendarias", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.brown)),
+                    const Text(
+                      "Acciones Legendarias",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        color: Colors.brown,
+                      ),
+                    ),
                     const Padding(
                       padding: EdgeInsets.only(bottom: 8.0),
-                      child: Text("La criatura puede realizar 3 acciones legendarias, eligiendo entre las opciones siguientes."),
+                      child: Text(
+                        "La criatura puede realizar 3 acciones legendarias, eligiendo entre las opciones siguientes.",
+                      ),
                     ),
-                    ...monster.legendaryActions!.map((action) => _buildActionItem(action.name, action.desc)),
+                    ...monster.legendaryActions!.map(
+                      (action) => _buildActionItem(action.name, action.desc),
+                    ),
                   ],
                   const SizedBox(height: 32),
                 ],
@@ -168,7 +323,10 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
         text: TextSpan(
           style: const TextStyle(color: Colors.black, fontSize: 16),
           children: [
-            TextSpan(text: "$title: ", style: const TextStyle(fontWeight: FontWeight.bold)),
+            TextSpan(
+              text: "$title: ",
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             TextSpan(text: content),
           ],
         ),
@@ -188,7 +346,10 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
     String modStr = mod >= 0 ? "+$mod" : "$mod";
     return Column(
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        ),
         Text("${value ?? 10} ($modStr)", style: const TextStyle(fontSize: 14)),
       ],
     );
@@ -201,7 +362,14 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(name ?? "", style: const TextStyle(fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, fontSize: 17)),
+          Text(
+            name ?? "",
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontStyle: FontStyle.italic,
+              fontSize: 17,
+            ),
+          ),
           Text(desc ?? "", style: const TextStyle(fontSize: 15)),
         ],
       ),
@@ -236,11 +404,16 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
   String _formatSenses(Senses? senses) {
     if (senses == null) return "N/A";
     List<String> parts = [];
-    if (senses.blindsight != null) parts.add("Vista ciega ${senses.blindsight}");
-    if (senses.darkvision != null) parts.add("Visión en la oscuridad ${senses.darkvision}");
-    if (senses.tremorsense != null) parts.add("Sentido de la vibración ${senses.tremorsense}");
-    if (senses.truesight != null) parts.add("Visión verdadera ${senses.truesight}");
-    if (senses.passivePerception != null) parts.add("Percepción pasiva ${senses.passivePerception}");
+    if (senses.blindsight != null)
+      parts.add("Vista ciega ${senses.blindsight}");
+    if (senses.darkvision != null)
+      parts.add("Visión en la oscuridad ${senses.darkvision}");
+    if (senses.tremorsense != null)
+      parts.add("Sentido de la vibración ${senses.tremorsense}");
+    if (senses.truesight != null)
+      parts.add("Visión verdadera ${senses.truesight}");
+    if (senses.passivePerception != null)
+      parts.add("Percepción pasiva ${senses.passivePerception}");
     return parts.isEmpty ? "N/A" : parts.join(", ");
   }
 }

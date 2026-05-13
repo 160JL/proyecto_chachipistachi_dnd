@@ -16,7 +16,11 @@ class _BattlescreenState extends State<Battlescreen> {
       appBar: AppBar(
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [Text("Batalla"), Text("Turno: $_turno"), Text(selectedPiece)],
+          children: [
+            Text("Batalla"),
+            Text("Turno: $_turno"),
+            Text(selectedPiece),
+          ],
         ),
       ),
       body: Center(
@@ -73,7 +77,8 @@ class Piece extends StatelessWidget {
   }
 }
 
-typedef BoardWidgetBuilder = Widget Function(BuildContext context, String tileId);
+typedef BoardWidgetBuilder =
+    Widget Function(BuildContext context, String tileId);
 
 class BoardBuilder extends StatefulWidget {
   final BoardWidgetBuilder builder;
