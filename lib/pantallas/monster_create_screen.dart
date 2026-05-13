@@ -3,7 +3,9 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'dart:convert';
 import '../models/monster.dart';
+import '../models/monster_ability_registry.dart';
 import '../service/monster_storage_service.dart';
+import '../service/monster_ability_registry_service.dart';
 
 /// Pantalla para la creación de nuevas criaturas personalizadas.
 /// Permite definir todos los atributos y guardarlos de forma local persistente.
@@ -109,12 +111,26 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
   late List<LegendaryAction> _legendaryActions;
   late List<MonsterReaction> _reactions;
 
+  // Registro de habilidades cargado desde SharedPreferences para autocompletado.
+  List<AbilityRegistryEntry> _registryEntries = [];
+
   @override
   void initState() {
     super.initState();
     _initControllers(
       widget.baseMonster,
     ); // Inicializa con datos del monstruo base si existe.
+    _loadRegistryEntries(); // Carga el registro de habilidades para sugerencias.
+  }
+
+  /// Carga las entradas del registro de habilidades desde SharedPreferences.
+  /// Se usa para alimentar las sugerencias de autocompletado en los diálogos
+  /// de creación/edición de acciones, reacciones, etc.
+  Future<void> _loadRegistryEntries() async {
+    final entries = await MonsterAbilityRegistryService().getAllEntries();
+    if (mounted) {
+      setState(() => _registryEntries = entries);
+    }
   }
 
   /// Inicializa los controladores con los datos de un monstruo (o vacíos si es creación de cero).
@@ -399,6 +415,49 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
         );
       } else {
         await MonsterStorageService().saveMonster(newMonster);
+      }
+
+      // Guarda las habilidades de la criatura en el registro persistente.
+      // Se usa el CR y nombre de la criatura para etiquetar cada entrada.
+      // El servicio comprobará duplicados (mismo nombre + mismo CR) antes de insertar.
+      final num cr = newMonster.challengeRating ?? 0;
+      final String monsterName = newMonster.name ?? 'Custom';
+      final List<AbilityRegistryEntry> newRegistryEntries = [];
+
+      // Registra las acciones de combate estándar.
+      for (final a in (newMonster.actions ?? [])) {
+        newRegistryEntries.add(AbilityRegistryEntry(
+          name: a.name ?? '', desc: a.desc ?? '',
+          category: 'action', challengeRating: cr, monsterName: monsterName,
+        ));
+      }
+      // Registra las reacciones de combate.
+      for (final r in (newMonster.reactions ?? [])) {
+        newRegistryEntries.add(AbilityRegistryEntry(
+          name: r.name ?? '', desc: r.desc ?? '',
+          category: 'reaction', challengeRating: cr, monsterName: monsterName,
+        ));
+      }
+      // Registra las acciones legendarias.
+      for (final la in (newMonster.legendaryActions ?? [])) {
+        newRegistryEntries.add(AbilityRegistryEntry(
+          name: la.name ?? '', desc: la.desc ?? '',
+          category: 'legendary_action', challengeRating: cr, monsterName: monsterName,
+        ));
+      }
+      // Registra las habilidades especiales / rasgos pasivos.
+      for (final sa in (newMonster.specialAbilities ?? [])) {
+        newRegistryEntries.add(AbilityRegistryEntry(
+          name: sa.name ?? '', desc: sa.desc ?? '',
+          category: 'special_ability', challengeRating: cr, monsterName: monsterName,
+        ));
+      }
+
+      // Envía las nuevas entradas al servicio con deduplicación.
+      if (newRegistryEntries.isNotEmpty) {
+        await MonsterAbilityRegistryService().addEntriesFromMonster(newRegistryEntries);
+        // Recarga las entradas para que las sugerencias estén actualizadas.
+        _loadRegistryEntries();
       }
 
       if (mounted) {
@@ -785,28 +844,33 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
 
               const SizedBox(height: 20),
               // Editores para elementos de lista dinámicos.
+              // Editores con autocompletado del registro, categorizados.
               _buildComplexListEditor<SpecialAbility>(
                 "Habilidades Especiales",
                 _specialAbilities,
                 (name, desc) => SpecialAbility(name: name, desc: desc),
+                'special_ability', // Categoría del registro.
               ),
               const SizedBox(height: 20),
               _buildComplexListEditor<MonsterAction>(
                 "Acciones",
                 _actions,
                 (name, desc) => MonsterAction(name: name, desc: desc),
+                'action', // Categoría del registro.
               ),
               const SizedBox(height: 20),
               _buildComplexListEditor<LegendaryAction>(
                 "Acciones Legendarias",
                 _legendaryActions,
                 (name, desc) => LegendaryAction(name: name, desc: desc),
+                'legendary_action', // Categoría del registro.
               ),
               const SizedBox(height: 20),
               _buildComplexListEditor<MonsterReaction>(
                 "Reacciones",
                 _reactions,
                 (name, desc) => MonsterReaction(name: name, desc: desc),
+                'reaction', // Categoría del registro.
               ),
 
               const SizedBox(height: 30),
@@ -884,10 +948,16 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
   }
 
   /// Constructor genérico para listas de habilidades o acciones editables.
+  ///
+  /// [title] — Título visible de la sección.
+  /// [list] — Lista mutable de elementos del tipo genérico T.
+  /// [creator] — Función factory para crear nuevos elementos del tipo T.
+  /// [category] — Categoría del registro para filtrar sugerencias de autocompletado.
   Widget _buildComplexListEditor<T>(
     String title,
     List<T> list,
     T Function(String name, String desc) creator,
+    String category,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -904,9 +974,10 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
               ),
             ),
             TextButton.icon(
+              // Abre el diálogo de creación con sugerencias de la categoría.
               onPressed: () => _showItemDialog(title, "", "", (name, desc) {
                 setState(() => list.add(creator(name, desc)));
-              }),
+              }, category),
               icon: const Icon(Icons.add_circle, color: Colors.brown),
               label: const Text(
                 "AÑADIR",
@@ -939,19 +1010,24 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                 style: TextStyle(color: Colors.red, fontSize: 12),
               ),
             ),
+            // Abre el diálogo de edición con datos precargados y sugerencias.
             onTap: () =>
                 _showItemDialog(title, item.name, item.desc, (name, desc) {
                   setState(() {
-                    if (T == SpecialAbility)
+                    if (T == SpecialAbility) {
                       list[idx] = SpecialAbility(name: name, desc: desc) as T;
-                    if (T == MonsterAction)
+                    }
+                    if (T == MonsterAction) {
                       list[idx] = MonsterAction(name: name, desc: desc) as T;
-                    if (T == LegendaryAction)
+                    }
+                    if (T == LegendaryAction) {
                       list[idx] = LegendaryAction(name: name, desc: desc) as T;
-                    if (T == MonsterReaction)
+                    }
+                    if (T == MonsterReaction) {
                       list[idx] = MonsterReaction(name: name, desc: desc) as T;
+                    }
                   });
-                }),
+                }, category),
           );
         }),
       ],
@@ -959,41 +1035,145 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
   }
 
   /// Muestra un diálogo para editar o crear un elemento con Nombre y Descripción.
+  ///
+  /// El campo de nombre incluye autocompletado que sugiere habilidades existentes
+  /// del registro, filtradas por [category]. Al seleccionar una sugerencia,
+  /// la descripción se auto-rellena con la del registro.
+  ///
+  /// [title] — Título del diálogo.
+  /// [initialName] — Valor inicial del nombre (vacío para creación).
+  /// [initialDesc] — Valor inicial de la descripción.
+  /// [onSave] — Callback ejecutado al guardar con (nombre, descripción).
+  /// [category] — Categoría del registro para filtrar sugerencias.
   void _showItemDialog(
     String title,
     String? initialName,
     String? initialDesc,
     Function(String, String) onSave,
+    String category,
   ) {
-    final nameCol = TextEditingController(text: initialName);
+    // Controller para la descripción (se auto-rellena al seleccionar sugerencia).
     final descCol = TextEditingController(text: initialDesc);
+    // Referencia al controller del nombre, gestionado por el Autocomplete.
+    TextEditingController? nameFieldController;
+
+    // Filtra las sugerencias del registro por la categoría correspondiente.
+    final List<AbilityRegistryEntry> suggestions = _registryEntries
+        .where((e) => e.category == category)
+        .toList();
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text("Editar $title"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameCol,
-              decoration: const InputDecoration(labelText: "Nombre"),
+        content: SizedBox(
+          // Ancho fijo para que el Autocomplete tenga espacio para el overlay.
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Campo de nombre con autocompletado del registro.
+                Autocomplete<AbilityRegistryEntry>(
+                  // Valor inicial para edición de elementos existentes.
+                  initialValue: TextEditingValue(text: initialName ?? ''),
+                  optionsBuilder: (TextEditingValue textEditingValue) {
+                    // No mostrar sugerencias si el campo está vacío.
+                    if (textEditingValue.text.isEmpty) {
+                      return const Iterable<AbilityRegistryEntry>.empty();
+                    }
+                    // Filtra sugerencias que contengan el texto escrito.
+                    return suggestions.where(
+                      (entry) => entry.name.toLowerCase().contains(
+                        textEditingValue.text.toLowerCase(),
+                      ),
+                    ).take(8); // Máximo 8 sugerencias para no saturar.
+                  },
+                  // Texto mostrado en el campo al seleccionar una opción.
+                  displayStringForOption: (entry) => entry.name,
+                  onSelected: (AbilityRegistryEntry entry) {
+                    // Al seleccionar, auto-rellena la descripción.
+                    descCol.text = entry.desc;
+                  },
+                  fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                    // Captura la referencia al controller para leer el texto al guardar.
+                    nameFieldController = controller;
+                    return TextField(
+                      controller: controller,
+                      focusNode: focusNode,
+                      decoration: const InputDecoration(
+                        labelText: "Nombre",
+                        hintText: "Escribe para ver sugerencias...",
+                      ),
+                    );
+                  },
+                  // Personaliza la apariencia de la lista de sugerencias.
+                  optionsViewBuilder: (context, onSelected, options) {
+                    return Align(
+                      alignment: Alignment.topLeft,
+                      child: Material(
+                        elevation: 4,
+                        borderRadius: BorderRadius.circular(8),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            maxHeight: 200,
+                            maxWidth: 280,
+                          ),
+                          child: ListView.builder(
+                            padding: EdgeInsets.zero,
+                            shrinkWrap: true,
+                            itemCount: options.length,
+                            itemBuilder: (context, index) {
+                              final entry = options.elementAt(index);
+                              return ListTile(
+                                dense: true,
+                                // Nombre de la habilidad en negrita.
+                                title: Text(
+                                  entry.name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                // Criatura de origen y CR como contexto.
+                                subtitle: Text(
+                                  '${entry.monsterName} (CR ${entry.challengeRating})',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                onTap: () => onSelected(entry),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
+                // Campo de descripción con texto libre.
+                TextField(
+                  controller: descCol,
+                  decoration: const InputDecoration(labelText: "Descripción"),
+                  maxLines: 5,
+                ),
+              ],
             ),
-            TextField(
-              controller: descCol,
-              decoration: const InputDecoration(labelText: "Descripción"),
-              maxLines: 5,
-            ),
-          ],
+          ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text("Cancelar"),
           ),
           TextButton(
             onPressed: () {
-              onSave(nameCol.text, descCol.text);
-              Navigator.pop(context);
+              // Usa el controller capturado del Autocomplete para leer el nombre.
+              onSave(nameFieldController?.text ?? '', descCol.text);
+              Navigator.pop(dialogContext);
             },
             child: const Text("Guardar"),
           ),

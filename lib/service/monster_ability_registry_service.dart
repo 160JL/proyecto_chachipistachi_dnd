@@ -63,52 +63,60 @@ class MonsterAbilityRegistryService {
         // Extrae y registra todas las acciones de combate estándar.
         if (monster.actions != null) {
           for (final action in monster.actions!) {
-            registry.add(AbilityRegistryEntry(
-              name: action.name ?? '',
-              desc: action.desc ?? '',
-              category: 'action',
-              challengeRating: cr,
-              monsterName: monsterName,
-            ));
+            registry.add(
+              AbilityRegistryEntry(
+                name: action.name ?? '',
+                desc: action.desc ?? '',
+                category: 'action',
+                challengeRating: cr,
+                monsterName: monsterName,
+              ),
+            );
           }
         }
 
         // Extrae y registra todas las reacciones de combate.
         if (monster.reactions != null) {
           for (final reaction in monster.reactions!) {
-            registry.add(AbilityRegistryEntry(
-              name: reaction.name ?? '',
-              desc: reaction.desc ?? '',
-              category: 'reaction',
-              challengeRating: cr,
-              monsterName: monsterName,
-            ));
+            registry.add(
+              AbilityRegistryEntry(
+                name: reaction.name ?? '',
+                desc: reaction.desc ?? '',
+                category: 'reaction',
+                challengeRating: cr,
+                monsterName: monsterName,
+              ),
+            );
           }
         }
 
         // Extrae y registra todas las acciones legendarias.
         if (monster.legendaryActions != null) {
           for (final legendaryAction in monster.legendaryActions!) {
-            registry.add(AbilityRegistryEntry(
-              name: legendaryAction.name ?? '',
-              desc: legendaryAction.desc ?? '',
-              category: 'legendary_action',
-              challengeRating: cr,
-              monsterName: monsterName,
-            ));
+            registry.add(
+              AbilityRegistryEntry(
+                name: legendaryAction.name ?? '',
+                desc: legendaryAction.desc ?? '',
+                category: 'legendary_action',
+                challengeRating: cr,
+                monsterName: monsterName,
+              ),
+            );
           }
         }
 
         // Extrae y registra todas las habilidades especiales / rasgos pasivos.
         if (monster.specialAbilities != null) {
           for (final ability in monster.specialAbilities!) {
-            registry.add(AbilityRegistryEntry(
-              name: ability.name ?? '',
-              desc: ability.desc ?? '',
-              category: 'special_ability',
-              challengeRating: cr,
-              monsterName: monsterName,
-            ));
+            registry.add(
+              AbilityRegistryEntry(
+                name: ability.name ?? '',
+                desc: ability.desc ?? '',
+                category: 'special_ability',
+                challengeRating: cr,
+                monsterName: monsterName,
+              ),
+            );
           }
         }
       } catch (e) {
@@ -142,6 +150,45 @@ class MonsterAbilityRegistryService {
     await prefs.setBool(_registryBuiltKey, true);
 
     print('Registro de habilidades construido: ${registry.length} entradas.');
+  }
+
+  /// Añade nuevas entradas al registro existente, evitando duplicados.
+  ///
+  /// [newEntries] — Lista de entradas a añadir (normalmente de una criatura
+  ///   recién creada por el usuario).
+  ///
+  /// Para cada entrada, comprueba si ya existe otra con el mismo nombre
+  /// Y el mismo CR. Si existe, la omite para evitar redundancia.
+  /// Si se añade al menos una entrada nueva, guarda el registro actualizado.
+  Future<void> addEntriesFromMonster(
+    List<AbilityRegistryEntry> newEntries,
+  ) async {
+    // Carga el registro existente completo.
+    final List<AbilityRegistryEntry> existing = await getAllEntries();
+    int addedCount = 0;
+
+    for (final entry in newEntries) {
+      // Omitir entradas sin nombre (datos incompletos).
+      if (entry.name.isEmpty) continue;
+
+      // Comprobar si ya existe una entrada con el mismo nombre y CR.
+      final bool isDuplicate = existing.any(
+        (e) =>
+            e.name == entry.name && e.challengeRating == entry.challengeRating,
+      );
+
+      // Solo añadir si no es duplicado.
+      if (!isDuplicate) {
+        existing.add(entry);
+        addedCount++;
+      }
+    }
+
+    // Solo persistir si hubo cambios reales para evitar escrituras innecesarias.
+    if (addedCount > 0) {
+      await _saveRegistry(existing);
+      print('Registro actualizado: $addedCount entradas nuevas añadidas.');
+    }
   }
 
   /// Recupera todas las entradas del registro desde SharedPreferences.
