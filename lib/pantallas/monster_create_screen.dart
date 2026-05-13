@@ -74,6 +74,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
 
   late TextEditingController _hpController;
   late TextEditingController _acController;
+  late TextEditingController _acTypeController;
   late TextEditingController _imageController;
   late TextEditingController _hitDiceController;
   late TextEditingController _hpRollController;
@@ -106,6 +107,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
   late List<SpecialAbility> _specialAbilities;
   late List<MonsterAction> _actions;
   late List<LegendaryAction> _legendaryActions;
+  late List<MonsterReaction> _reactions;
 
   @override
   void initState() {
@@ -206,11 +208,18 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
     _specialAbilities = List.from(monster?.specialAbilities ?? []);
     _actions = List.from(monster?.actions ?? []);
     _legendaryActions = List.from(monster?.legendaryActions ?? []);
+    _reactions = List.from(monster?.reactions ?? []);
 
     int? baseAc = monster?.armorClass != null && monster!.armorClass!.isNotEmpty
         ? monster.armorClass![0].value
         : 10;
     _acController = TextEditingController(text: baseAc.toString());
+
+    String? baseAcType =
+        monster?.armorClass != null && monster!.armorClass!.isNotEmpty
+        ? monster.armorClass![0].type
+        : 'natural';
+    _acTypeController = TextEditingController(text: baseAcType);
 
     _str = monster?.strength ?? 10;
     _dex = monster?.dexterity ?? 10;
@@ -236,6 +245,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
     _nameController.dispose();
     _hpController.dispose();
     _acController.dispose();
+    _acTypeController.dispose();
     _imageController.dispose();
     _hitDiceController.dispose();
     _hpRollController.dispose();
@@ -328,7 +338,9 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
         armorClass: [
           ArmorClass(
             value: int.tryParse(_acController.text) ?? 10,
-            type: 'natural',
+            type: _acTypeController.text.isEmpty
+                ? 'natural'
+                : _acTypeController.text,
           ),
         ],
         strength: _str,
@@ -372,6 +384,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
         specialAbilities: _specialAbilities,
         actions: _actions,
         legendaryActions: _legendaryActions,
+        reactions: _reactions,
         proficiencies: widget.baseMonster?.proficiencies,
         conditionImmunities: widget.baseMonster?.conditionImmunities,
         index: _nameController.text.toLowerCase().replaceAll(' ', '-'),
@@ -548,6 +561,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
               Row(
                 children: [
                   Expanded(
+                    flex: 1,
                     child: TextFormField(
                       controller: _hpController,
                       decoration: const InputDecoration(labelText: 'HP'),
@@ -556,10 +570,23 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
+                    flex: 1,
                     child: TextFormField(
                       controller: _acController,
-                      decoration: const InputDecoration(labelText: 'AC'),
+                      decoration: const InputDecoration(
+                        labelText: 'AC (Valor)',
+                      ),
                       keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 2,
+                    child: TextFormField(
+                      controller: _acTypeController,
+                      decoration: const InputDecoration(
+                        labelText: 'Tipo de AC (ej: natural, armor)',
+                      ),
                     ),
                   ),
                 ],
@@ -775,6 +802,12 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                 _legendaryActions,
                 (name, desc) => LegendaryAction(name: name, desc: desc),
               ),
+              const SizedBox(height: 20),
+              _buildComplexListEditor<MonsterReaction>(
+                "Reacciones",
+                _reactions,
+                (name, desc) => MonsterReaction(name: name, desc: desc),
+              ),
 
               const SizedBox(height: 30),
               ElevatedButton.icon(
@@ -915,6 +948,8 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                       list[idx] = MonsterAction(name: name, desc: desc) as T;
                     if (T == LegendaryAction)
                       list[idx] = LegendaryAction(name: name, desc: desc) as T;
+                    if (T == MonsterReaction)
+                      list[idx] = MonsterReaction(name: name, desc: desc) as T;
                   });
                 }),
           );

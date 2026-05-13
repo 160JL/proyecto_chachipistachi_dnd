@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:proyecto_chachipistachi_dnd/pantallas/battleScreen.dart';
+import 'package:proyecto_chachipistachi_dnd/pantallas/battle_screen.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/monster_list_screen.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/monster_create_screen.dart';
 
@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
       // Mapeo de rutas de la aplicación a sus respectivos componentes/pantallas.
       routes: {
         "/": (context) => const MyHomePage(),
-        "/battlescreen": (context) => const Battlescreen(),
+        "/battlescreen": (context) => const BattleScreen(),
         "/api": (context) => const MonsterListScreen(isLocal: false),
         "/create": (context) => const MonsterCreateScreen(),
         "/repository": (context) => const MonsterListScreen(isLocal: true),

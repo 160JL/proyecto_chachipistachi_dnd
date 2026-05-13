@@ -4,6 +4,8 @@ import 'package:proyecto_chachipistachi_dnd/models/monster.dart';
 import 'package:proyecto_chachipistachi_dnd/service/connection_service.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/monster_create_screen.dart';
 
+import 'package:proyecto_chachipistachi_dnd/service/battle_queue_service.dart';
+
 /// Pantalla que muestra la ficha detallada de una criatura.
 class MonsterDetailScreen extends StatefulWidget {
   final String?
@@ -90,7 +92,29 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
       appBar: AppBar(
         title: Text(widget.monsterName),
         actions: [
-          if (_currentMonster != null)
+          if (_currentMonster != null) ...[
+            TextButton.icon(
+              onPressed: () async {
+                await BattleQueueService().addToQueue(_currentMonster!);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        "${_currentMonster!.name} añadido a la lista de batalla",
+                      ),
+                    ),
+                  );
+                }
+              },
+              icon: const Icon(Icons.shield, color: Colors.white),
+              label: const Text(
+                "BATALLA",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
             TextButton.icon(
               onPressed: () {
                 Navigator.push(
@@ -123,6 +147,7 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
                 ),
               ),
             ),
+          ],
         ],
       ),
       body: FutureBuilder<Monster>(
@@ -299,6 +324,24 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
                     ),
                     ...monster.legendaryActions!.map(
                       (action) => _buildActionItem(action.name, action.desc),
+                    ),
+                  ],
+
+                  // Listado de Reacciones (si la criatura dispone de ellas).
+                  if (monster.reactions != null &&
+                      monster.reactions!.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    const Text(
+                      "Reacciones",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        color: Colors.brown,
+                      ),
+                    ),
+                    ...monster.reactions!.map(
+                      (reaction) =>
+                          _buildActionItem(reaction.name, reaction.desc),
                     ),
                   ],
                   const SizedBox(height: 32),

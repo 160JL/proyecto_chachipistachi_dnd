@@ -56,6 +56,7 @@ class Monster {
   List<SpecialAbility>? specialAbilities; // Habilidades pasivas.
   List<MonsterAction>? actions; // Acciones de combate estándar.
   List<LegendaryAction>? legendaryActions; // Acciones legendarias especiales.
+  List<MonsterReaction>? reactions; // Reacciones de combate.
   String?
   image; // Ruta relativa de la API o URL externa o ruta de archivo local.
   String? url; // URL de referencia en la API.
@@ -90,6 +91,7 @@ class Monster {
     this.specialAbilities,
     this.actions,
     this.legendaryActions,
+    this.reactions,
     this.image,
     this.url,
   });
@@ -140,6 +142,7 @@ class Monster {
         json['legendary_actions'],
         LegendaryAction.fromJson,
       ),
+      reactions: parseList(json['reactions'], MonsterReaction.fromJson),
       image: json['image'],
       url: json['url'],
     );
@@ -179,6 +182,7 @@ class Monster {
       'special_abilities': specialAbilities?.map((e) => e.toJson()).toList(),
       'actions': actions?.map((e) => e.toJson()).toList(),
       'legendary_actions': legendaryActions?.map((e) => e.toJson()).toList(),
+      'reactions': reactions?.map((e) => e.toJson()).toList(),
       'image': image,
       'url': url,
     };
@@ -376,6 +380,18 @@ class Speed {
       Speed(walk: json['walk'], fly: json['fly'], swim: json['swim']);
 
   Map<String, dynamic> toJson() => {'walk': walk, 'fly': fly, 'swim': swim};
+}
+
+/// Representa una reacción de combate.
+class MonsterReaction {
+  String? name, desc;
+
+  MonsterReaction({this.name, this.desc});
+
+  factory MonsterReaction.fromJson(Map<String, dynamic> json) =>
+      MonsterReaction(name: json['name'], desc: json['desc']);
+
+  Map<String, dynamic> toJson() => {'name': name, 'desc': desc};
 }
 
 /// Helper para parsear listas dinámicas en el JSON.
