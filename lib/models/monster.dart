@@ -1,9 +1,11 @@
+/// Modelo para representar la lista básica de monstruos devuelta por la API.
 class MonsterList {
   int count;
   List<Map<String, dynamic>>? results;
 
-  MonsterList({required this.count,this.results});
+  MonsterList({required this.count, this.results});
 
+  /// Crea una instancia de [MonsterList] a partir de un JSON.
   factory MonsterList.fromJson(Map<String, dynamic> json) {
     return MonsterList(
       count: json["count"],
@@ -12,6 +14,7 @@ class MonsterList {
   }
 }
 
+/// Representación detallada de un monstruo de D&D.
 class Monster {
   String? index;
   String? name;
@@ -36,7 +39,7 @@ class Monster {
   List<dynamic>? conditionImmunities;
   Senses? senses;
   String? languages;
-  int? challengeRating;
+  num? challengeRating; // num permite manejar tanto int como double
   int? proficiencyBonus;
   int? xp;
   List<SpecialAbility>? specialAbilities;
@@ -79,6 +82,7 @@ class Monster {
     this.url,
   });
 
+  /// Factory para construir un monstruo desde el JSON de la API.
   factory Monster.fromJson(Map<String, dynamic> json) {
     return Monster(
       index: json['index'],
@@ -103,7 +107,7 @@ class Monster {
       ),
       damageVulnerabilities: json['damage_vulnerabilities'] ?? [],
       damageResistances: json['damage_resistances'] ?? [],
-      damageImmunities: json["damages_inmunities"],
+      damageImmunities: List<String>.from(json['damage_immunities'] ?? []),
       conditionImmunities: json['condition_immunities'] ?? [],
       senses: json['senses'] != null ? Senses.fromJson(json['senses']) : null,
       languages: json['languages'],
@@ -125,6 +129,7 @@ class Monster {
   }
 }
 
+/// Representa una acción (ataque o habilidad activa) de un monstruo.
 class MonsterAction {
   String? name;
   String? multiattackType;
@@ -164,6 +169,7 @@ class MonsterAction {
   }
 }
 
+/// Detalle de ataques individuales dentro de una acción de multiataque.
 class ActionAction {
   String? actionName;
   int? count;
@@ -174,12 +180,14 @@ class ActionAction {
   factory ActionAction.fromJson(Map<String, dynamic> json) {
     return ActionAction(
       actionName: json['action_name'],
-      count: json['count'],
+      // Manejamos casos donde la API devuelva el número como String o int
+      count: json['count'] is int ? json['count'] : int.tryParse(json['count']?.toString() ?? ''),
       type: json['type'],
     );
   }
 }
 
+/// Información sobre el daño infligido.
 class Damage {
   final ApiReference? damageType;
   final String? damageDice;
@@ -196,6 +204,7 @@ class Damage {
   }
 }
 
+/// Referencia genérica a otros elementos de la API (tipo de daño, habilidades, etc.).
 class ApiReference {
   final String? index;
   final String? name;
@@ -214,6 +223,7 @@ class ApiReference {
   }
 }
 
+/// Dificultad de Salvación (Difficulty Class).
 class Dc {
   final ApiReference? dcType;
   final int? dcValue;
@@ -232,6 +242,7 @@ class Dc {
   }
 }
 
+/// Reglas de uso limitado para habilidades (ej: 3 veces al día).
 class ActionUsage {
   String? type;
   String? dice;
@@ -248,6 +259,7 @@ class ActionUsage {
   }
 }
 
+/// Clase de Armadura del monstruo.
 class ArmorClass {
   String? type;
   int? value;
@@ -259,6 +271,7 @@ class ArmorClass {
   }
 }
 
+/// Acciones Legendarias.
 class LegendaryAction {
   String? name;
   String? desc;
@@ -279,6 +292,7 @@ class LegendaryAction {
   }
 }
 
+/// Habilidades y bonificadores de competencia.
 class ProficiencyElement {
   final int? value;
   final ApiReference? proficiency;
@@ -295,6 +309,7 @@ class ProficiencyElement {
   }
 }
 
+/// Sentidos del monstruo (visión en la oscuridad, percepción pasiva, etc.).
 class Senses {
   String? blindsight;
   String? darkvision;
@@ -311,12 +326,14 @@ class Senses {
   }
 }
 
+/// Rasgos especiales o habilidades pasivas.
 class SpecialAbility {
   String? name;
   String? desc;
   SpecialAbilityUsage? usage;
+  Dc? dc;
 
-  SpecialAbility({this.name, this.desc, this.usage});
+  SpecialAbility({this.name, this.desc, this.usage, this.dc});
 
   factory SpecialAbility.fromJson(Map<String, dynamic> json) {
     return SpecialAbility(
@@ -325,10 +342,12 @@ class SpecialAbility {
       usage: json['usage'] != null
           ? SpecialAbilityUsage.fromJson(json['usage'])
           : null,
+      dc: json['dc'] != null ? Dc.fromJson(json['dc']) : null,
     );
   }
 }
 
+/// Reglas de uso de habilidades especiales.
 class SpecialAbilityUsage {
   String? type;
   int? times;
@@ -345,6 +364,7 @@ class SpecialAbilityUsage {
   }
 }
 
+/// Velocidades de movimiento.
 class Speed {
   String? walk;
   String? fly;
@@ -357,6 +377,7 @@ class Speed {
   }
 }
 
+/// Función auxiliar para parsear listas de objetos genéricos de la API.
 List<T> parseList<T>(dynamic json, T Function(Map<String, dynamic>) fromJson) {
   if (json is List) {
     return json.map((e) => fromJson(e)).toList();
