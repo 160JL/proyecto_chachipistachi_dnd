@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:proyecto_chachipistachi_dnd/models/monster.dart';
 import 'package:proyecto_chachipistachi_dnd/service/connection_service.dart';
 import 'package:proyecto_chachipistachi_dnd/service/monster_storage_service.dart';
+import 'package:proyecto_chachipistachi_dnd/service/monster_ability_registry_service.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/monster_detail_screen.dart';
 
 /// Pantalla unificada para mostrar listas de monstruos (API o Repositorio Local).
@@ -167,10 +168,117 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
           immunity: _selectedImms.isNotEmpty
               ? _selectedImms.join(',')
               : "Todos",
-        );
+        ).then((monsterList) {
+          // Solo disparar la construcción del registro cuando se carga la lista
+          // completa (sin filtro de nombre), para tener todas las criaturas.
+          if (_searchController.text.isEmpty) {
+            _checkAndBuildRegistry(monsterList);
+          }
+          return monsterList;
+        });
       }
     });
   }
+
+  /// Comprueba si el registro de habilidades ya está construido.
+  /// Si no lo está, inicia el proceso de construcción mostrando un diálogo
+  /// de progreso al usuario. Solo se ejecuta una vez en la vida de la app.
+  Future<void> _checkAndBuildRegistry(MonsterList monsterList) async {
+    final registryService = MonsterAbilityRegistryService();
+
+    // Si el registro ya fue construido previamente, no hacer nada.
+    final bool alreadyBuilt = await registryService.isRegistryBuilt();
+    if (alreadyBuilt) return;
+
+    // Verificar que hay resultados disponibles para construir el registro.
+    final List<Map<String, dynamic>> results = monsterList.results ?? [];
+    if (results.isEmpty) return;
+
+    // Verificar que el widget sigue montado antes de mostrar el diálogo.
+    if (!mounted) return;
+
+    // Inicializa los valores de progreso antes de mostrar el diálogo.
+    // Estos campos de instancia serán actualizados por el callback onProgress
+    // y leídos por el builder del StatefulBuilder en cada reconstrucción.
+    _dialogProgress = 0;
+    _dialogTotal = results.length;
+
+    // Muestra un diálogo modal con barra de progreso que no se puede cerrar
+    // manualmente (se cierra automáticamente al completar el proceso).
+    showDialog(
+      context: context,
+      barrierDismissible: false, // No permitir cerrar tocando fuera.
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            // Almacenamos el setter del diálogo para actualizarlo desde fuera.
+            _dialogSetState = setDialogState;
+
+            // Cálculo del porcentaje de progreso para la barra.
+            final double percentage = _dialogTotal > 0
+                ? _dialogProgress / _dialogTotal
+                : 0.0;
+
+            return AlertDialog(
+              title: const Text('Construyendo Registro de Habilidades'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Descargando y procesando las habilidades de todas '
+                    'las criaturas del bestiario. Este proceso solo se '
+                    'realiza una vez.',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                  const SizedBox(height: 20),
+                  // Barra de progreso lineal animada.
+                  LinearProgressIndicator(value: percentage),
+                  const SizedBox(height: 10),
+                  // Texto con el conteo numérico del progreso.
+                  Text(
+                    '$_dialogProgress / $_dialogTotal criaturas procesadas',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    // Inicia la construcción del registro en segundo plano.
+    // El callback onProgress actualiza el diálogo en cada criatura procesada.
+    await registryService.buildRegistry(
+      results,
+      onProgress: (current, total) {
+        // Actualiza el estado del diálogo si sigue disponible.
+        if (_dialogSetState != null) {
+          _dialogSetState!(() {
+            _dialogProgress = current;
+            _dialogTotal = total;
+          });
+        }
+      },
+    );
+
+    // Cierra el diálogo de progreso al completar la construcción.
+    if (mounted && Navigator.canPop(context)) {
+      Navigator.pop(context);
+    }
+
+    // Limpia las referencias al setter del diálogo.
+    _dialogSetState = null;
+  }
+
+  // Referencia al setState del diálogo de progreso para actualizarlo externamente.
+  StateSetter? _dialogSetState;
+  // Progreso actual y total para el diálogo (se actualizan desde el callback).
+  int _dialogProgress = 0;
+  int _dialogTotal = 0;
 
   @override
   Widget build(BuildContext context) {
