@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'package:provider/provider.dart';
 import 'package:proyecto_chachipistachi_dnd/models/monster.dart';
 import 'package:proyecto_chachipistachi_dnd/service/connection_service.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/monster_create_screen.dart';
 
-import 'package:proyecto_chachipistachi_dnd/service/battle_queue_service.dart';
+import 'package:proyecto_chachipistachi_dnd/providers/battle_queue_provider.dart';
 
 /// Pantalla que muestra la ficha detallada de una criatura.
 class MonsterDetailScreen extends StatefulWidget {
@@ -100,8 +101,9 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
         actions: [
           if (_currentMonster != null && widget.showActions) ...[
             TextButton.icon(
-              onPressed: () async {
-                await BattleQueueService().addToQueue(_currentMonster!);
+              onPressed: () {
+                Provider.of<BattleQueueProvider>(context, listen: false)
+                    .addToQueue(_currentMonster!);
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(

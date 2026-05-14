@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/battle_screen.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/monster_list_screen.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/monster_create_screen.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/combat_list_screen.dart';
+import 'package:proyecto_chachipistachi_dnd/providers/battle_queue_provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => BattleQueueProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 /// Clase principal de la aplicación que configura el tema global y la navegación por rutas.

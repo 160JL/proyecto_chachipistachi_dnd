@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:math';
+import 'package:provider/provider.dart';
 import 'package:proyecto_chachipistachi_dnd/models/monster.dart';
 import 'package:proyecto_chachipistachi_dnd/service/monster_storage_service.dart';
-import 'package:proyecto_chachipistachi_dnd/service/battle_queue_service.dart';
+import 'package:proyecto_chachipistachi_dnd/providers/battle_queue_provider.dart';
 
 import 'package:proyecto_chachipistachi_dnd/pantallas/monster_detail_screen.dart';
 
@@ -814,9 +815,9 @@ class _BattleScreenState extends State<BattleScreen> {
   }
 
   /// Muestra el listado de criaturas en cola para poder añadirlas al combate activo.
-  void _showAddMonsterDialog() async {
-    final queuedMonsters = await BattleQueueService().getQueue();
-    if (!mounted) return;
+  void _showAddMonsterDialog() {
+    final battleQueue = Provider.of<BattleQueueProvider>(context, listen: false);
+    final queuedMonsters = battleQueue.queue;
 
     showDialog(
       context: context,
@@ -860,9 +861,9 @@ class _BattleScreenState extends State<BattleScreen> {
                           size: 20,
                           color: Colors.redAccent,
                         ),
-                        onPressed: () async {
+                        onPressed: () {
                           // Permite quitar un monstruo de la cola sin añadirlo a la batalla
-                          await BattleQueueService().removeFromQueue(entry.key);
+                          battleQueue.removeFromQueue(entry.key);
                           Navigator.pop(context);
                           _showAddMonsterDialog(); // Refrescamos el diálogo para ver el cambio
                         },
@@ -882,8 +883,8 @@ class _BattleScreenState extends State<BattleScreen> {
         actions: [
           if (queuedMonsters.isNotEmpty)
             TextButton(
-              onPressed: () async {
-                await BattleQueueService().clearQueue();
+              onPressed: () {
+                battleQueue.clearQueue();
                 Navigator.pop(context);
                 _showAddMonsterDialog();
               },

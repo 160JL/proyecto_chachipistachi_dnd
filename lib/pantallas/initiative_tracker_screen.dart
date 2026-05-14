@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'dart:io';
+import 'package:provider/provider.dart';
 import '../models/monster.dart';
 import '../models/combat.dart';
-import '../service/battle_queue_service.dart';
+import '../providers/battle_queue_provider.dart';
 import '../service/combat_storage_service.dart';
 import 'monster_detail_screen.dart';
 
@@ -807,9 +808,8 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
   }
 
   /// Muestra el diálogo para añadir monstruos que están actualmente en la cola de batalla.
-  void _showAddMonsterDialog() async {
-    final queuedMonsters = await BattleQueueService().getQueue();
-    if (!mounted) return;
+  void _showAddMonsterDialog() {
+    final queuedMonsters = Provider.of<BattleQueueProvider>(context, listen: false).queue;
 
     showDialog(
       context: context,
