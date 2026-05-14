@@ -1,49 +1,65 @@
+/// Clase que representa la respuesta de listado simplificado de la API (index, name, url).
 class MonsterList {
-  int count;
-  List<Map<String, dynamic>>? results;
+  final int count; // Total de resultados disponibles.
+  final List<Map<String, dynamic>>?
+  results; // Lista de mapas con información básica.
 
-  MonsterList({required this.count,this.results});
+  MonsterList({required this.count, this.results});
 
+  /// Crea una instancia de MonsterList a partir de la respuesta JSON de la API.
   factory MonsterList.fromJson(Map<String, dynamic> json) {
     return MonsterList(
-      count: json["count"],
-      results: List<Map<String, dynamic>>.from(json['results']),
+      count: json["count"] ?? 0,
+      results: json['results'] != null
+          ? List<Map<String, dynamic>>.from(json['results'])
+          : [],
     );
+  }
+
+  /// Convierte la lista a JSON para almacenamiento persistente en caché.
+  Map<String, dynamic> toJson() {
+    return {'count': count, 'results': results};
   }
 }
 
+/// Modelo de datos exhaustivo para una criatura de D&D.
+/// Diseñado para ser compatible tanto con la API oficial como con la creación local del usuario.
 class Monster {
-  String? index;
-  String? name;
-  String? size;
-  String? type;
-  String? alignment;
-  List<ArmorClass>? armorClass;
-  int? hitPoints;
-  String? hitDice;
-  String? hitPointsRoll;
-  Speed? speed;
-  int? strength;
-  int? dexterity;
-  int? constitution;
-  int? intelligence;
-  int? wisdom;
-  int? charisma;
-  List<ProficiencyElement>? proficiencies;
-  List<dynamic>? damageVulnerabilities;
-  List<dynamic>? damageResistances;
-  List<String>? damageImmunities;
-  List<dynamic>? conditionImmunities;
-  Senses? senses;
-  String? languages;
-  int? challengeRating;
-  int? proficiencyBonus;
-  int? xp;
-  List<SpecialAbility>? specialAbilities;
-  List<MonsterAction>? actions;
-  List<LegendaryAction>? legendaryActions;
-  String? image;
-  String? url;
+  String? index; // Identificador único (slug).
+  String? name; // Nombre de la criatura.
+  String? size; // Tamaño (Tiny, Large, etc.).
+  String? type; // Tipo (Beast, Dragon, etc.).
+  String? alignment; // Alineamiento moral (Lawful Good, etc.).
+  List<ArmorClass>? armorClass; // Lista de configuraciones de armadura.
+  int? hitPoints; // Puntos de vida base.
+  String? hitDice; // Dados de vida (ej: 2d10).
+  String? hitPointsRoll; // Fórmula de tirada de vida completa.
+  Speed? speed; // Velocidades de desplazamiento.
+  int? strength,
+      dexterity,
+      constitution,
+      intelligence,
+      wisdom,
+      charisma; // Atributos base.
+  List<ProficiencyElement>?
+  proficiencies; // Competencias en habilidades y salvaciones.
+  List<String>? damageVulnerabilities; // Debilidades al daño.
+  List<String>? damageResistances; // Resistencias al daño.
+  List<String>? damageImmunities; // Inmunidades totales al daño.
+  List<ApiReference>?
+  conditionImmunities; // Inmunidades a estados (Charm, Poison, etc.).
+  Senses? senses; // Sentidos especiales (Vision nocturna, etc.).
+  String? languages; // Idiomas conocidos.
+  num? challengeRating; // Valor de desafío (CR).
+  int? proficiencyBonus; // Bono de competencia.
+  int? xp; // Experiencia otorgada.
+  List<SpecialAbility>? specialAbilities; // Habilidades pasivas.
+  List<MonsterAction>? actions; // Acciones de combate estándar.
+  List<LegendaryAction>? legendaryActions; // Acciones legendarias especiales.
+  List<MonsterReaction>? reactions; // Reacciones de combate.
+  String?
+  image; // Ruta relativa de la API o URL externa o ruta de archivo local.
+  String? url; // URL de referencia en la API.
 
   Monster({
     this.index,
@@ -75,10 +91,12 @@ class Monster {
     this.specialAbilities,
     this.actions,
     this.legendaryActions,
+    this.reactions,
     this.image,
     this.url,
   });
 
+  /// Mapeo desde JSON a objeto Monster. Maneja campos nulos y conversiones de tipo.
   factory Monster.fromJson(Map<String, dynamic> json) {
     return Monster(
       index: json['index'],
@@ -101,10 +119,15 @@ class Monster {
         json['proficiencies'],
         ProficiencyElement.fromJson,
       ),
-      damageVulnerabilities: json['damage_vulnerabilities'] ?? [],
-      damageResistances: json['damage_resistances'] ?? [],
-      damageImmunities: json["damages_inmunities"],
-      conditionImmunities: json['condition_immunities'] ?? [],
+      damageVulnerabilities: List<String>.from(
+        json['damage_vulnerabilities'] ?? [],
+      ),
+      damageResistances: List<String>.from(json['damage_resistances'] ?? []),
+      damageImmunities: List<String>.from(json['damage_immunities'] ?? []),
+      conditionImmunities: parseList(
+        json['condition_immunities'],
+        ApiReference.fromJson,
+      ),
       senses: json['senses'] != null ? Senses.fromJson(json['senses']) : null,
       languages: json['languages'],
       challengeRating: json['challenge_rating'],
@@ -119,67 +142,82 @@ class Monster {
         json['legendary_actions'],
         LegendaryAction.fromJson,
       ),
+      reactions: parseList(json['reactions'], MonsterReaction.fromJson),
       image: json['image'],
       url: json['url'],
     );
   }
+
+  /// Serialización a mapa JSON para almacenamiento en SharedPreferences.
+  Map<String, dynamic> toJson() {
+    return {
+      'index': index,
+      'name': name,
+      'size': size,
+      'type': type,
+      'alignment': alignment,
+      'armor_class': armorClass?.map((e) => e.toJson()).toList(),
+      'hit_points': hitPoints,
+      'hit_dice': hitDice,
+      'hit_points_roll': hitPointsRoll,
+      'speed': speed?.toJson(),
+      'strength': strength,
+      'dexterity': dexterity,
+      'constitution': constitution,
+      'intelligence': intelligence,
+      'wisdom': wisdom,
+      'charisma': charisma,
+      'proficiencies': proficiencies?.map((e) => e.toJson()).toList(),
+      'damage_vulnerabilities': damageVulnerabilities,
+      'damage_resistances': damageResistances,
+      'damage_immunities': damageImmunities,
+      'condition_immunities': conditionImmunities
+          ?.map((e) => e.toJson())
+          .toList(),
+      'senses': senses?.toJson(),
+      'languages': languages,
+      'challenge_rating': challengeRating,
+      'proficiency_bonus': proficiencyBonus,
+      'xp': xp,
+      'special_abilities': specialAbilities?.map((e) => e.toJson()).toList(),
+      'actions': actions?.map((e) => e.toJson()).toList(),
+      'legendary_actions': legendaryActions?.map((e) => e.toJson()).toList(),
+      'reactions': reactions?.map((e) => e.toJson()).toList(),
+      'image': image,
+      'url': url,
+    };
+  }
 }
 
+/// Representa una acción de combate de la criatura.
 class MonsterAction {
-  String? name;
-  String? multiattackType;
-  String? desc;
-  List<ActionAction>? actions;
-  int? attackBonus;
-  List<Damage>? damage;
-  Dc? dc;
-  ActionUsage? usage;
+  String? name; // Nombre de la acción.
+  String? desc; // Descripción del efecto.
+  List<Damage>? damage; // Lista de tipos y dados de daño si aplica.
+  Dc? dc; // Salvación requerida si aplica.
 
-  MonsterAction({
-    this.name,
-    this.multiattackType,
-    this.desc,
-    this.actions,
-    this.attackBonus,
-    this.damage,
-    this.dc,
-    this.usage,
-  });
+  MonsterAction({this.name, this.desc, this.damage, this.dc});
 
   factory MonsterAction.fromJson(Map<String, dynamic> json) {
     return MonsterAction(
       name: json['name'],
-      multiattackType: json['multiattack_type'],
       desc: json['desc'],
-      actions: (json['actions'] as List?)
-          ?.map((e) => ActionAction.fromJson(e))
-          .toList(),
-      attackBonus: json['attack_bonus'],
       damage: (json['damage'] as List?)
           ?.map((e) => Damage.fromJson(e))
           .toList(),
       dc: json['dc'] != null ? Dc.fromJson(json['dc']) : null,
-      usage: json['usage'] != null ? ActionUsage.fromJson(json['usage']) : null,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'desc': desc,
+    'damage': damage?.map((e) => e.toJson()).toList(),
+    'dc': dc?.toJson(),
+  };
 }
 
-class ActionAction {
-  String? actionName;
-  int? count;
-  String? type;
-
-  ActionAction({this.actionName, this.count, this.type});
-
-  factory ActionAction.fromJson(Map<String, dynamic> json) {
-    return ActionAction(
-      actionName: json['action_name'],
-      count: json['count'],
-      type: json['type'],
-    );
-  }
-}
-
+/// Representa el daño causado (dados y tipo).
 class Damage {
   final ApiReference? damageType;
   final String? damageDice;
@@ -194,26 +232,31 @@ class Damage {
       damageDice: json['damage_dice'],
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'damage_type': damageType?.toJson(),
+    'damage_dice': damageDice,
+  };
 }
 
+/// Objeto genérico para referencias internas de la API (Nombre y URL).
 class ApiReference {
-  final String? index;
-  final String? name;
-  final String? url;
-  final String? updatedAt;
+  final String? index, name, url;
 
-  ApiReference({this.index, this.name, this.url, this.updatedAt});
+  ApiReference({this.index, this.name, this.url});
 
   factory ApiReference.fromJson(Map<String, dynamic> json) {
     return ApiReference(
       index: json['index'],
       name: json['name'],
       url: json['url'],
-      updatedAt: json['updated_at'],
     );
   }
+
+  Map<String, dynamic> toJson() => {'index': index, 'name': name, 'url': url};
 }
 
+/// Clase de Dificultad (DC) para pruebas o salvaciones.
 class Dc {
   final ApiReference? dcType;
   final int? dcValue;
@@ -230,55 +273,40 @@ class Dc {
       successType: json['success_type'],
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'dc_type': dcType?.toJson(),
+    'dc_value': dcValue,
+    'success_type': successType,
+  };
 }
 
-class ActionUsage {
-  String? type;
-  String? dice;
-  int? minValue;
-
-  ActionUsage({this.type, this.dice, this.minValue});
-
-  factory ActionUsage.fromJson(Map<String, dynamic> json) {
-    return ActionUsage(
-      type: json['type'],
-      dice: json['dice'],
-      minValue: json['min_value'],
-    );
-  }
-}
-
+/// Estructura para la Clase de Armadura.
 class ArmorClass {
   String? type;
   int? value;
 
   ArmorClass({this.type, this.value});
 
-  factory ArmorClass.fromJson(Map<String, dynamic> json) {
-    return ArmorClass(type: json['type'], value: json['value']);
-  }
+  factory ArmorClass.fromJson(Map<String, dynamic> json) =>
+      ArmorClass(type: json['type'], value: json['value']);
+
+  Map<String, dynamic> toJson() => {'type': type, 'value': value};
 }
 
+/// Acción legendaria (se ejecuta al final del turno de otro).
 class LegendaryAction {
-  String? name;
-  String? desc;
-  Dc? dc;
-  List<Damage>? damage;
+  String? name, desc;
 
-  LegendaryAction({this.name, this.desc, this.dc, this.damage});
+  LegendaryAction({this.name, this.desc});
 
-  factory LegendaryAction.fromJson(Map<String, dynamic> json) {
-    return LegendaryAction(
-      name: json['name'],
-      desc: json['desc'],
-      dc: json['dc'] != null ? Dc.fromJson(json['dc']) : null,
-      damage: (json['damage'] as List?)
-          ?.map((e) => Damage.fromJson(e))
-          .toList(),
-    );
-  }
+  factory LegendaryAction.fromJson(Map<String, dynamic> json) =>
+      LegendaryAction(name: json['name'], desc: json['desc']);
+
+  Map<String, dynamic> toJson() => {'name': name, 'desc': desc};
 }
 
+/// Elemento de competencia (Habilidad o Salvación).
 class ProficiencyElement {
   final int? value;
   final ApiReference? proficiency;
@@ -293,73 +321,82 @@ class ProficiencyElement {
           : null,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'value': value,
+    'proficiency': proficiency?.toJson(),
+  };
 }
 
+/// Definición de sentidos de la criatura.
 class Senses {
-  String? blindsight;
-  String? darkvision;
+  String? blindsight, darkvision, tremorsense, truesight;
   int? passivePerception;
 
-  Senses({this.blindsight, this.darkvision, this.passivePerception});
+  Senses({
+    this.blindsight,
+    this.darkvision,
+    this.tremorsense,
+    this.truesight,
+    this.passivePerception,
+  });
 
-  factory Senses.fromJson(Map<String, dynamic> json) {
-    return Senses(
-      blindsight: json['blindsight'],
-      darkvision: json['darkvision'],
-      passivePerception: json['passive_perception'],
-    );
-  }
+  factory Senses.fromJson(Map<String, dynamic> json) => Senses(
+    blindsight: json['blindsight'],
+    darkvision: json['darkvision'],
+    tremorsense: json['tremorsense'],
+    truesight: json['truesight'],
+    passivePerception: json['passive_perception'],
+  );
+
+  Map<String, dynamic> toJson() => {
+    'blindsight': blindsight,
+    'darkvision': darkvision,
+    'tremorsense': tremorsense,
+    'truesight': truesight,
+    'passive_perception': passivePerception,
+  };
 }
 
+/// Habilidad especial o rasgo pasivo.
 class SpecialAbility {
-  String? name;
-  String? desc;
-  SpecialAbilityUsage? usage;
+  String? name, desc;
 
-  SpecialAbility({this.name, this.desc, this.usage});
+  SpecialAbility({this.name, this.desc});
 
-  factory SpecialAbility.fromJson(Map<String, dynamic> json) {
-    return SpecialAbility(
-      name: json['name'],
-      desc: json['desc'],
-      usage: json['usage'] != null
-          ? SpecialAbilityUsage.fromJson(json['usage'])
-          : null,
-    );
-  }
+  factory SpecialAbility.fromJson(Map<String, dynamic> json) =>
+      SpecialAbility(name: json['name'], desc: json['desc']);
+
+  Map<String, dynamic> toJson() => {'name': name, 'desc': desc};
 }
 
-class SpecialAbilityUsage {
-  String? type;
-  int? times;
-  List<dynamic>? restTypes;
-
-  SpecialAbilityUsage({this.type, this.times, this.restTypes});
-
-  factory SpecialAbilityUsage.fromJson(Map<String, dynamic> json) {
-    return SpecialAbilityUsage(
-      type: json['type'],
-      times: json['times'],
-      restTypes: json['rest_types'] ?? [],
-    );
-  }
-}
-
+/// Configuración de velocidades de movimiento.
 class Speed {
-  String? walk;
-  String? fly;
-  String? swim;
+  String? walk, fly, swim;
 
   Speed({this.walk, this.fly, this.swim});
 
-  factory Speed.fromJson(Map<String, dynamic> json) {
-    return Speed(walk: json['walk'], fly: json['fly'], swim: json['swim']);
-  }
+  factory Speed.fromJson(Map<String, dynamic> json) =>
+      Speed(walk: json['walk'], fly: json['fly'], swim: json['swim']);
+
+  Map<String, dynamic> toJson() => {'walk': walk, 'fly': fly, 'swim': swim};
 }
 
+/// Representa una reacción de combate.
+class MonsterReaction {
+  String? name, desc;
+
+  MonsterReaction({this.name, this.desc});
+
+  factory MonsterReaction.fromJson(Map<String, dynamic> json) =>
+      MonsterReaction(name: json['name'], desc: json['desc']);
+
+  Map<String, dynamic> toJson() => {'name': name, 'desc': desc};
+}
+
+/// Helper para parsear listas dinámicas en el JSON.
 List<T> parseList<T>(dynamic json, T Function(Map<String, dynamic>) fromJson) {
-  if (json is List) {
-    return json.map((e) => fromJson(e)).toList();
-  }
+  if (json is List)
+    return json.map((e) => fromJson(e as Map<String, dynamic>)).toList();
   return [];
 }
