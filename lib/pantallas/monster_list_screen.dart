@@ -30,6 +30,8 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
   String _selectedType = "Todos";
   String _selectedSize = "Todos";
   String _selectedAlign = "Todos";
+  String _selectedCR = "Todos";
+  String _sortBy = "Nombre (A-Z)";
   List<String> _selectedVulns = [];
   List<String> _selectedRes = [];
   List<String> _selectedImms = [];
@@ -70,6 +72,49 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
     "evil",
     "unaligned",
   ];
+  final List<String> _crs = [
+    "Todos",
+    "0",
+    "0.125",
+    "0.25",
+    "0.5",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "25",
+    "26",
+    "27",
+    "28",
+    "29",
+    "30",
+  ];
+  final List<String> _sortOptions = [
+    "Nombre (A-Z)",
+    "Nombre (Z-A)",
+    "CR (Bajo-Alto)",
+    "CR (Alto-Bajo)",
+  ];
   final List<String> _damageTypes = [
     "acid",
     "bludgeoning",
@@ -99,7 +144,7 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
       if (widget.isLocal) {
         // Lógica para el Repositorio Local (filtrado manual en memoria).
         _futureData = MonsterStorageService().getMonsters().then((list) {
-          return list.where((m) {
+          var filteredList = list.where((m) {
             // Filtro por nombre.
             final nameMatch = (m.name ?? "").toLowerCase().contains(
               _searchController.text.toLowerCase(),
@@ -119,8 +164,12 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
                     ) ??
                     false);
 
+            // Filtro por CR.
+            final crMatch =
+                _selectedCR == "Todos" ||
+                m.challengeRating == double.tryParse(_selectedCR);
+
             // Filtros de daños (Vulnerabilidades, Resistencias, Inmunidades).
-            // Se usa .every para asegurar que la criatura cumpla con TODOS los tipos seleccionados (AND).
             final vulnMatch =
                 _selectedVulns.isEmpty ||
                 _selectedVulns.every(
@@ -154,13 +203,18 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
                 typeMatch &&
                 sizeMatch &&
                 alignMatch &&
+                crMatch &&
                 vulnMatch &&
                 resMatch &&
                 immMatch;
           }).toList();
+
+          // Aplicar ordenación.
+          _applySorting(filteredList);
+          return filteredList;
         });
       } else {
-        // Lógica para la API remota (los parámetros se envían en la petición HTTP).
+        // Lógica para la API remota.
         _futureData = ConnectionService()
             .fetchEventos(
               forceRefresh: forceRefresh,
@@ -178,15 +232,133 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
                   ? _selectedImms.join(',')
                   : "Todos",
             )
-            .then((monsterList) {
+            .then((monsterList) async {
+              var results = monsterList.results ?? [];
+
+              // Para el filtrado de CR en la API y la ordenación, necesitamos los detalles.
+              // Si hay CR seleccionado o la ordenación no es por nombre, forzamos la carga de detalles.
+              bool needsDetails =
+                  _selectedCR != "Todos" || _sortBy.contains("CR");
+
+              if (needsDetails) {
+                final List<Monster> detailedList = await Future.wait(
+                  results.map(
+                    (m) => ConnectionService().fetchMonsterDetail(m['url']),
+                  ),
+                );
+
+                // Filtrar por CR.
+                if (_selectedCR != "Todos") {
+                  double targetCR = double.parse(_selectedCR);
+                  List<Map<String, dynamic>> filteredResults = [];
+                  for (int i = 0; i < results.length; i++) {
+                    if (detailedList[i].challengeRating == targetCR) {
+                      filteredResults.add(results[i]);
+                    }
+                  }
+                  results = filteredResults;
+                  // También necesitamos actualizar detailedList si vamos a ordenar después
+                  // Pero si filtramos y luego ordenamos, detailedList ya no coincide por índice.
+                  // Re-obtenemos los detalles filtrados si es necesario o unimos antes.
+                  final List<Monster> filteredDetails = [];
+                  for (int i = 0; i < detailedList.length; i++) {
+                    if (detailedList[i].challengeRating == targetCR) {
+                      filteredDetails.add(detailedList[i]);
+                    }
+                  }
+                  _applySortingToApiResults(results, filteredDetails);
+                } else {
+                  // Ordenar sin filtrar CR.
+                  _applySortingToApiResults(results, detailedList);
+                }
+              } else {
+                // Ordenación básica por nombre si no necesitamos detalles.
+                if (_sortBy == "Nombre (A-Z)") {
+                  results.sort(
+                    (a, b) => (a["name"] ?? "").compareTo(b["name"] ?? ""),
+                  );
+                } else if (_sortBy == "Nombre (Z-A)") {
+                  results.sort(
+                    (a, b) => (b["name"] ?? "").compareTo(a["name"] ?? ""),
+                  );
+                }
+              }
+
               // Construcción única del registro de habilidades si se carga la lista completa.
               if (_searchController.text.isEmpty) {
                 _checkAndBuildRegistry(monsterList);
               }
-              return monsterList;
+              return MonsterList(count: results.length, results: results);
             });
       }
     });
+  }
+
+  void _applySorting(List<Monster> list) {
+    switch (_sortBy) {
+      case "Nombre (A-Z)":
+        list.sort((a, b) => (a.name ?? "").compareTo(b.name ?? ""));
+        break;
+      case "Nombre (Z-A)":
+        list.sort((a, b) => (b.name ?? "").compareTo(a.name ?? ""));
+        break;
+      case "CR (Bajo-Alto)":
+        list.sort(
+          (a, b) => (a.challengeRating ?? 0).compareTo(b.challengeRating ?? 0),
+        );
+        break;
+      case "CR (Alto-Bajo)":
+        list.sort(
+          (a, b) => (b.challengeRating ?? 0).compareTo(a.challengeRating ?? 0),
+        );
+        break;
+    }
+  }
+
+  void _applySortingToApiResults(
+    List<Map<String, dynamic>> results,
+    List<Monster> details,
+  ) {
+    // Necesitamos mapear los resultados con sus detalles para ordenar.
+    final combined = List.generate(
+      results.length,
+      (i) => {'res': results[i], 'det': details[i]},
+    );
+
+    switch (_sortBy) {
+      case "Nombre (A-Z)":
+        combined.sort(
+          (a, b) => (a['det'] as Monster).name!.compareTo(
+            (b['det'] as Monster).name!,
+          ),
+        );
+        break;
+      case "Nombre (Z-A)":
+        combined.sort(
+          (a, b) => (b['det'] as Monster).name!.compareTo(
+            (a['det'] as Monster).name!,
+          ),
+        );
+        break;
+      case "CR (Bajo-Alto)":
+        combined.sort(
+          (a, b) => ((a['det'] as Monster).challengeRating ?? 0).compareTo(
+            (b['det'] as Monster).challengeRating ?? 0,
+          ),
+        );
+        break;
+      case "CR (Alto-Bajo)":
+        combined.sort(
+          (a, b) => ((b['det'] as Monster).challengeRating ?? 0).compareTo(
+            (a['det'] as Monster).challengeRating ?? 0,
+          ),
+        );
+        break;
+    }
+
+    for (int i = 0; i < results.length; i++) {
+      results[i] = combined[i]['res'] as Map<String, dynamic>;
+    }
   }
 
   /// Comprueba y construye el registro local de habilidades para búsqueda rápida.
@@ -344,14 +516,14 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
   Widget _buildSearchBarSection() {
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
-      color: Colors.brown[50],
+      color: Theme.of(context).colorScheme.surface,
       child: TextField(
         controller: _searchController,
         decoration: InputDecoration(
           labelText: 'Buscar por nombre...',
           prefixIcon: const Icon(Icons.search),
           border: const OutlineInputBorder(),
-          fillColor: Colors.white,
+          fillColor: Theme.of(context).colorScheme.surface,
           filled: true,
           suffixIcon: TextButton.icon(
             onPressed: () {
@@ -378,7 +550,7 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
       right: 0,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.brown[50],
+          color: Theme.of(context).colorScheme.surface,
           boxShadow: [
             BoxShadow(
               color: Colors.black12,
@@ -388,15 +560,18 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
           ],
         ),
         child: ExpansionTile(
-          title: const Text(
+          title: Text(
             "Filtros Avanzados",
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: Colors.brown,
+              color: Theme.of(context).colorScheme.primary,
               fontSize: 14,
             ),
           ),
-          leading: const Icon(Icons.filter_list, color: Colors.brown),
+          leading: Icon(
+            Icons.filter_list,
+            color: Theme.of(context).colorScheme.primary,
+          ),
           children: [
             LayoutBuilder(
               builder: (context, constraints) {
@@ -438,11 +613,33 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
                           ],
                         ),
                         const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildDropdown(
+                                "Alineamiento",
+                                _selectedAlign,
+                                _alignments,
+                                (v) => setState(() => _selectedAlign = v!),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildDropdown(
+                                "CR",
+                                _selectedCR,
+                                _crs,
+                                (v) => setState(() => _selectedCR = v!),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
                         _buildDropdown(
-                          "Alineamiento",
-                          _selectedAlign,
-                          _alignments,
-                          (v) => setState(() => _selectedAlign = v!),
+                          "Ordenar por",
+                          _sortBy,
+                          _sortOptions,
+                          (v) => setState(() => _sortBy = v!),
                         ),
                         const SizedBox(height: 12),
                         _sectionTitle("Vulnerabilidades"),
@@ -471,8 +668,12 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
                           child: ElevatedButton(
                             onPressed: _cargarDatos,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.brown,
-                              foregroundColor: Colors.white,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.primary,
+                              foregroundColor: Theme.of(
+                                context,
+                              ).colorScheme.onPrimary,
                             ),
                             child: const Text("APLICAR FILTROS"),
                           ),
@@ -493,10 +694,10 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
   /// Título de sección pequeño para los grupos de filtros.
   Widget _sectionTitle(String title) => Text(
     title,
-    style: const TextStyle(
+    style: TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.bold,
-      color: Colors.brown,
+      color: Theme.of(context).colorScheme.primary,
     ),
   );
 
@@ -587,12 +788,14 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
             option,
             style: TextStyle(
               fontSize: 11,
-              color: isSelected ? Colors.white : Colors.black,
+              color: isSelected
+                  ? Theme.of(context).colorScheme.onPrimary
+                  : Theme.of(context).colorScheme.onSurface,
             ),
           ),
           selected: isSelected,
-          selectedColor: Colors.brown,
-          checkmarkColor: Colors.white,
+          selectedColor: Theme.of(context).colorScheme.primary,
+          checkmarkColor: Theme.of(context).colorScheme.onPrimary,
           onSelected: (bool value) {
             List<String> newList = List.from(selected);
             value ? newList.add(option) : newList.remove(option);
@@ -637,7 +840,9 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
       child: ListTile(
         leading: _buildLocalImage(image),
         title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text("$size $type, ${monster.alignment}"),
+        subtitle: Text(
+          "$size $type, CR: ${monster.challengeRating ?? '?'}\n${monster.alignment}",
+        ),
         trailing: IconButton(
           icon: const Icon(Icons.delete, color: Colors.redAccent),
           onPressed: () async {
@@ -727,7 +932,7 @@ class _MonsterSubtitle extends StatelessWidget {
         if (snapshot.hasData) {
           final m = snapshot.data!;
           return Text(
-            "${m.size} ${m.type}, ${m.alignment}",
+            "${m.size} ${m.type}, CR: ${m.challengeRating ?? '?'}\n${m.alignment}",
             style: const TextStyle(fontSize: 12),
           );
         }

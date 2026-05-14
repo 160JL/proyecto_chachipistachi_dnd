@@ -534,12 +534,12 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
             key: _formKey,
             child: ListView(
               children: [
-                const Text(
+                Text(
                   "Imagen",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
-                    color: Colors.brown,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -561,20 +561,24 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                       icon: const Icon(Icons.photo_library),
                       label: const Text("GALERÍA"),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.brown[400],
-                        foregroundColor: Colors.white,
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.secondary,
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onSecondary,
                       ),
                     ),
                   ],
                 ),
                 const Divider(height: 30),
 
-                const Text(
+                Text(
                   "Datos Básicos",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
-                    color: Colors.brown,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 TextFormField(
@@ -595,7 +599,8 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                               (s) => DropdownMenuItem(value: s, child: Text(s)),
                             )
                             .toList(),
-                        onChanged: (val) => setState(() => _selectedSize = val!),
+                        onChanged: (val) =>
+                            setState(() => _selectedSize = val!),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -608,7 +613,8 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                               (t) => DropdownMenuItem(value: t, child: Text(t)),
                             )
                             .toList(),
-                        onChanged: (val) => setState(() => _selectedType = val!),
+                        onChanged: (val) =>
+                            setState(() => _selectedType = val!),
                       ),
                     ),
                   ],
@@ -686,7 +692,9 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                     Expanded(
                       child: TextFormField(
                         controller: _hitDiceController,
-                        decoration: const InputDecoration(labelText: 'Hit Dice'),
+                        decoration: const InputDecoration(
+                          labelText: 'Hit Dice',
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -700,12 +708,12 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                 ),
 
                 const SizedBox(height: 20),
-                const Text(
+                Text(
                   "Velocidad",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
-                    color: Colors.brown,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 Row(
@@ -734,12 +742,12 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                 ),
 
                 const SizedBox(height: 20),
-                const Text(
+                Text(
                   "Atributos",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
-                    color: Colors.brown,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 _buildStatSelector(
@@ -774,12 +782,12 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                 ),
 
                 const SizedBox(height: 20),
-                const Text(
+                Text(
                   "Desafío y XP",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
-                    color: Colors.brown,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 Row(
@@ -813,12 +821,12 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                 ),
 
                 const SizedBox(height: 20),
-                const Text(
+                Text(
                   "Sentidos",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
-                    color: Colors.brown,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 TextFormField(
@@ -846,12 +854,12 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                 ),
 
                 const SizedBox(height: 20),
-                const Text(
+                Text(
                   "Otros",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
-                    color: Colors.brown,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 TextFormField(
@@ -916,8 +924,8 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.brown[600],
-                    foregroundColor: Colors.white,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   ),
                 ),
               ],
@@ -975,7 +983,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
           min: 1,
           max: 30,
           divisions: 29,
-          activeColor: Colors.brown,
+          activeColor: Theme.of(context).colorScheme.primary,
           onChanged: (val) => onChanged(val.round()),
         ),
       ],
@@ -1002,10 +1010,10 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
           children: [
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
-                color: Colors.brown,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
             TextButton.icon(
@@ -1013,11 +1021,14 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
               onPressed: () => _showItemDialog(title, "", "", (name, desc) {
                 setState(() => list.add(creator(name, desc)));
               }, category),
-              icon: const Icon(Icons.add_circle, color: Colors.brown),
-              label: const Text(
+              icon: Icon(
+                Icons.add_circle,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              label: Text(
                 "AÑADIR",
                 style: TextStyle(
-                  color: Colors.brown,
+                  color: Theme.of(context).colorScheme.primary,
                   fontWeight: FontWeight.bold,
                 ),
               ),

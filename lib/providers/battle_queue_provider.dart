@@ -11,7 +11,9 @@ class BattleQueueProvider with ChangeNotifier {
   /// Añade una criatura a la cola de batalla.
   void addToQueue(Monster monster) {
     // Evitamos duplicados exactos comparando el nombre e index
-    bool exists = _queue.any((m) => m.name == monster.name && m.index == monster.index);
+    bool exists = _queue.any(
+      (m) => m.name == monster.name && m.index == monster.index,
+    );
 
     if (!exists) {
       _queue.add(monster);

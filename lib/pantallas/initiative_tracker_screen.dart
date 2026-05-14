@@ -185,7 +185,9 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Eliminar Participante"),
-        content: Text("¿Estás seguro de que quieres eliminar a ${p.name} del combate?"),
+        content: Text(
+          "¿Estás seguro de que quieres eliminar a ${p.name} del combate?",
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -204,7 +206,10 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
               _saveSession();
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text("ELIMINAR", style: TextStyle(color: Colors.white)),
+            child: const Text(
+              "ELIMINAR",
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -360,16 +365,18 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
   }
 
   /// Resuelve la imagen del participante desde URL o archivo.
-  ImageProvider? _getParticipantImage(Participant p) {
+  ImageProvider _getParticipantImage(Participant p) {
     String? img = p.image;
-    if (img == null || img.isEmpty) return null;
-    if (img.startsWith('http')) return NetworkImage(img);
-    if (img.startsWith('/api')) {
-      return NetworkImage("https://www.dnd5eapi.co$img");
+    if (img != null && img.isNotEmpty) {
+      if (img.startsWith('http')) return NetworkImage(img);
+      if (img.startsWith('/api')) {
+        return NetworkImage("https://www.dnd5eapi.co$img");
+      }
+      final file = File(img);
+      if (file.existsSync()) return FileImage(file);
     }
-    final file = File(img);
-    if (file.existsSync()) return FileImage(file);
-    return null;
+    // Si no tiene imagen o el archivo no existe, usamos el placeholder
+    return const AssetImage('assets/placeholder.png');
   }
 
   @override
@@ -428,7 +435,6 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Colors.brown,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -439,10 +445,16 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                       icon: const Icon(Icons.add, size: 20),
                       label: const FittedBox(
                         fit: BoxFit.scaleDown,
-                        child: Text("Añadir Criaturas", style: TextStyle(fontSize: 13)),
+                        child: Text(
+                          "Añadir Criaturas",
+                          style: TextStyle(fontSize: 13),
+                        ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 8,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -452,10 +464,16 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                       icon: const Icon(Icons.person_add, size: 20),
                       label: const FittedBox(
                         fit: BoxFit.scaleDown,
-                        child: Text("Añadir Jugadores", style: TextStyle(fontSize: 13)),
+                        child: Text(
+                          "Añadir Jugadores",
+                          style: TextStyle(fontSize: 13),
+                        ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 8,
+                        ),
                       ),
                     ),
                     const Divider(height: 30),
@@ -469,10 +487,19 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                               backgroundColor: Colors.orange.shade800,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                               elevation: 4,
                             ),
-                            child: const Text("INI. MONSTRUOS", textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                            child: const Text(
+                              "INI. MONSTRUOS",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -483,10 +510,19 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                               backgroundColor: Colors.blue.shade800,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                               elevation: 4,
                             ),
-                            child: const Text("INI. JUGADORES", textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                            child: const Text(
+                              "INI. JUGADORES",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -516,17 +552,19 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                   ] else ...[
                     // Panel informativo del combate en curso (Ronda y Turno).
                     Card(
-                      color: Colors.brown.shade50,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primaryContainer.withOpacity(0.1),
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
                           children: [
                             Text(
                               "RONDA ${_session.round}",
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 28,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.brown,
+                                color: Theme.of(context).colorScheme.primary,
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -565,7 +603,10 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                       icon: const Icon(Icons.stop, size: 20),
                       label: const FittedBox(
                         fit: BoxFit.scaleDown,
-                        child: Text("TERMINAR COMBATE", style: TextStyle(fontSize: 14)),
+                        child: Text(
+                          "TERMINAR COMBATE",
+                          style: TextStyle(fontSize: 14),
+                        ),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red.shade700,
@@ -586,13 +627,19 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
               decoration: BoxDecoration(
                 border: Border(
                   left: !isPortrait
-                      ? BorderSide(color: Colors.brown.shade200, width: 2)
+                      ? BorderSide(
+                          color: Theme.of(context).dividerColor,
+                          width: 2,
+                        )
                       : BorderSide.none,
                   top: isPortrait
-                      ? BorderSide(color: Colors.brown.shade200, width: 2)
+                      ? BorderSide(
+                          color: Theme.of(context).dividerColor,
+                          width: 2,
+                        )
                       : BorderSide.none,
                 ),
-                color: Colors.brown.shade50.withValues(alpha: 0.5),
+                color: Theme.of(context).colorScheme.surface,
               ),
               child: ListView.builder(
                 padding: const EdgeInsets.symmetric(vertical: 8),
@@ -609,12 +656,14 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                       horizontal: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: isActive ? Colors.amber.shade100 : Colors.white,
+                      color: isActive
+                          ? Theme.of(context).colorScheme.secondaryContainer
+                          : Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isActive
-                            ? Colors.amber.shade800
-                            : Colors.brown.shade200,
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).dividerColor,
                         width: isActive ? 3 : 1,
                       ),
                       boxShadow: [
@@ -645,18 +694,24 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                                     width: 50,
                                     height: 50,
                                     decoration: BoxDecoration(
-                                      color: Colors.brown.shade800,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
                                       shape: BoxShape.circle,
                                       border: Border.all(
-                                        color: Colors.white,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onPrimary,
                                         width: 2,
                                       ),
                                     ),
                                     alignment: Alignment.center,
                                     child: Text(
                                       p.initiative.toString(),
-                                      style: const TextStyle(
-                                        color: Colors.white,
+                                      style: TextStyle(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onPrimary,
                                         fontSize: 22,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -666,14 +721,17 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         p.name,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 16,
-                                          color: Colors.brown,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.primary,
                                         ),
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -693,28 +751,24 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                                     ],
                                   ),
                                 ),
-                                // Avatar del participante (si no es jugador).
-                                if (!p.isPlayer)
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(20),
-                                    child: Container(
-                                      width: 40,
-                                      height: 40,
-                                      color: Colors.grey.shade200,
-                                      child: p.image != null || p.monster != null
-                                          ? Image(
-                                              image:
-                                                  _getParticipantImage(p) ??
-                                                  const AssetImage(
-                                                    'assets/placeholder.png',
-                                                  ),
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (c, e, s) =>
-                                                  Center(child: Text(p.name[0])),
-                                            )
-                                          : Center(child: Text(p.name[0])),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Container(
+                                    width: 40,
+                                    height: 40,
+                                    color: Colors.grey.shade100,
+                                    child: Image(
+                                      image: _getParticipantImage(p),
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (c, e, s) => Center(
+                                        child: Text(
+                                          p.name.isNotEmpty ? p.name[0] : "?",
+                                          style: const TextStyle(fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
                                     ),
                                   ),
+                                ),
                                 // Botón para eliminar participante con confirmación.
                                 IconButton(
                                   icon: const Icon(
@@ -741,7 +795,9 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.brown.shade50,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.surfaceVariant.withOpacity(0.5),
                               borderRadius: const BorderRadius.only(
                                 bottomLeft: Radius.circular(12),
                                 bottomRight: Radius.circular(12),
@@ -778,10 +834,10 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                                   ),
                                 ),
                                 const Spacer(),
-                                const Icon(
+                                Icon(
                                   Icons.edit,
                                   size: 16,
-                                  color: Colors.brown,
+                                  color: Theme.of(context).colorScheme.primary,
                                 ),
                               ],
                             ),
@@ -809,7 +865,10 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
 
   /// Muestra el diálogo para añadir monstruos que están actualmente en la cola de batalla.
   void _showAddMonsterDialog() {
-    final queuedMonsters = Provider.of<BattleQueueProvider>(context, listen: false).queue;
+    final queuedMonsters = Provider.of<BattleQueueProvider>(
+      context,
+      listen: false,
+    ).queue;
 
     showDialog(
       context: context,

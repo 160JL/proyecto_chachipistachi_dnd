@@ -6,7 +6,7 @@ import '../models/monster_ability_registry.dart';
 /// para generar una criatura de D&D 5e completamente aleatoria y equilibrada.
 class MonsterRandomizerService {
   /// Genera una criatura aleatoria basada en un CR y parámetros de usuario.
-  /// 
+  ///
   /// Utiliza un sistema de puntos (budget) para los atributos, fórmulas
   /// para calcular dados de golpe, y extrae habilidades aleatorias del registro.
   static Monster generateRandomMonster({
@@ -18,13 +18,31 @@ class MonsterRandomizerService {
     required List<AbilityRegistryEntry> registryEntries,
   }) {
     final random = Random();
-    
+
     // 1. Obtener stats base sugeridas para el CR
-    final stats = _crStatsTable.firstWhere((s) => s.cr == targetCr, orElse: () => _crStatsTable.last);
+    final stats = _crStatsTable.firstWhere(
+      (s) => s.cr == targetCr,
+      orElse: () => _crStatsTable.last,
+    );
 
     // 2. Aleatorizar Tamaño y Tipo
     final sizes = ["Tiny", "Small", "Medium", "Large", "Huge", "Gargantuan"];
-    final types = ["Aberration", "Beast", "Celestial", "Construct", "Dragon", "Elemental", "Fey", "Fiend", "Giant", "Humanoid", "Monstrosity", "Ooze", "Plant", "Undead"];
+    final types = [
+      "Aberration",
+      "Beast",
+      "Celestial",
+      "Construct",
+      "Dragon",
+      "Elemental",
+      "Fey",
+      "Fiend",
+      "Giant",
+      "Humanoid",
+      "Monstrosity",
+      "Ooze",
+      "Plant",
+      "Undead",
+    ];
     final size = sizes[random.nextInt(sizes.length)];
     final type = types[random.nextInt(types.length)];
 
@@ -32,37 +50,45 @@ class MonsterRandomizerService {
     final alignPart1 = ["unaligned", "lawful", "neutral", "chaotic"];
     final alignPart2 = ["good", "neutral", "evil"];
     final align1 = alignPart1[random.nextInt(alignPart1.length)];
-    final align2 = align1 == "unaligned" ? "neutral" : alignPart2[random.nextInt(alignPart2.length)];
+    final align2 = align1 == "unaligned"
+        ? "neutral"
+        : alignPart2[random.nextInt(alignPart2.length)];
     final alignment = align1 == "unaligned" ? "unaligned" : "$align1 $align2";
 
     // 4. Aleatorizar Atributos usando un sistema de reserva (budget)
-    int totalPoints = 24 + (targetCr * 3.5).floor(); 
+    int totalPoints = 24 + (targetCr * 3.5).floor();
     List<int> attrs = [6, 6, 6, 6, 6, 6]; // Mínimo 6 en todo
-    
+
     while (totalPoints > 0) {
       List<int> validIndices = [];
       for (int i = 0; i < 6; i++) {
         if (attrs[i] < 30) validIndices.add(i);
       }
       if (validIndices.isEmpty) break; // Todos alcanzaron el tope de 30
-      
+
       int indexToIncrease = validIndices[random.nextInt(validIndices.length)];
       int pointsToAdd = random.nextInt(3) + 1; // Añadir de 1 a 3 a la vez
-      
+
       if (pointsToAdd > totalPoints) pointsToAdd = totalPoints;
       if (attrs[indexToIncrease] + pointsToAdd > 30) {
         pointsToAdd = 30 - attrs[indexToIncrease];
       }
-      
+
       attrs[indexToIncrease] += pointsToAdd;
       totalPoints -= pointsToAdd;
     }
-    final str = attrs[0], dex = attrs[1], con = attrs[2], intelligence = attrs[3], wis = attrs[4], cha = attrs[5];
+    final str = attrs[0],
+        dex = attrs[1],
+        con = attrs[2],
+        intelligence = attrs[3],
+        wis = attrs[4],
+        cha = attrs[5];
 
     // 5. Velocidad de movimiento
     int sizeIndex = sizes.indexOf(size);
     int walkSpeed = 30; // Base 30
-    if (sizeIndex > 2) { // Si es mayor a Medium, es más lento (o se podría hacer más rápido según se vea, pero sigo la petición)
+    if (sizeIndex > 2) {
+      // Si es mayor a Medium, es más lento (o se podría hacer más rápido según se vea, pero sigo la petición)
       walkSpeed -= (sizeIndex - 2) * 5;
     }
     final speed = Speed(
@@ -75,21 +101,44 @@ class MonsterRandomizerService {
     String hitDie = "d8";
     double avgHpPerDie = 4.5;
     switch (size) {
-      case "Tiny": hitDie = "d4"; avgHpPerDie = 2.5; break;
-      case "Small": hitDie = "d6"; avgHpPerDie = 3.5; break;
-      case "Medium": hitDie = "d8"; avgHpPerDie = 4.5; break;
-      case "Large": hitDie = "d10"; avgHpPerDie = 5.5; break;
-      case "Huge": hitDie = "d12"; avgHpPerDie = 6.5; break;
-      case "Gargantuan": hitDie = "d20"; avgHpPerDie = 10.5; break;
+      case "Tiny":
+        hitDie = "d4";
+        avgHpPerDie = 2.5;
+        break;
+      case "Small":
+        hitDie = "d6";
+        avgHpPerDie = 3.5;
+        break;
+      case "Medium":
+        hitDie = "d8";
+        avgHpPerDie = 4.5;
+        break;
+      case "Large":
+        hitDie = "d10";
+        avgHpPerDie = 5.5;
+        break;
+      case "Huge":
+        hitDie = "d12";
+        avgHpPerDie = 6.5;
+        break;
+      case "Gargantuan":
+        hitDie = "d20";
+        avgHpPerDie = 10.5;
+        break;
     }
-    
-    int generatedHp = stats.hpMin + random.nextInt(stats.hpMax - stats.hpMin + 1);
+
+    int generatedHp =
+        stats.hpMin + random.nextInt(stats.hpMax - stats.hpMin + 1);
     int conMod = (con - 10) ~/ 2;
     int numDice = (generatedHp / (avgHpPerDie + conMod)).round();
     if (numDice < 1) numDice = 1;
 
     int hpBonus = numDice * conMod;
-    String hpRoll = hpBonus == 0 ? "$numDice$hitDie" : (hpBonus > 0 ? "$numDice$hitDie + $hpBonus" : "$numDice$hitDie - ${hpBonus.abs()}");
+    String hpRoll = hpBonus == 0
+        ? "$numDice$hitDie"
+        : (hpBonus > 0
+              ? "$numDice$hitDie + $hpBonus"
+              : "$numDice$hitDie - ${hpBonus.abs()}");
 
     // 7. Sentidos
     int wisMod = (wis - 10) ~/ 2;
@@ -107,18 +156,26 @@ class MonsterRandomizerService {
       if (count == 0) return [];
       final List<AbilityRegistryEntry> result = [];
       final Set<String> selectedNames = {};
-      
+
       final crList = [0, 0.125, 0.25, 0.5, ...List.generate(30, (i) => i + 1)];
       crList.sort((a, b) => b.compareTo(a));
-      
+
       int startIndex = crList.indexOf(targetCr);
       if (startIndex == -1) startIndex = 0;
-      
-      for (int i = startIndex; i < crList.length && result.length < count; i++) {
+
+      for (
+        int i = startIndex;
+        i < crList.length && result.length < count;
+        i++
+      ) {
         final currentCr = crList[i];
-        final availableInCr = registryEntries.where((e) => e.category == category && e.challengeRating == currentCr).toList();
+        final availableInCr = registryEntries
+            .where(
+              (e) => e.category == category && e.challengeRating == currentCr,
+            )
+            .toList();
         availableInCr.shuffle(random);
-        
+
         for (final entry in availableInCr) {
           if (result.length < count) {
             if (!selectedNames.contains(entry.name)) {
@@ -133,7 +190,10 @@ class MonsterRandomizerService {
       return result;
     }
 
-    final selectedSpecial = getAvailable('special_ability', numSpecialAbilities);
+    final selectedSpecial = getAvailable(
+      'special_ability',
+      numSpecialAbilities,
+    );
     final selectedAct = getAvailable('action', numActions);
     final selectedLeg = getAvailable('legendary_action', numLegendaryActions);
     final selectedReac = getAvailable('reaction', numReactions);
@@ -159,10 +219,18 @@ class MonsterRandomizerService {
       xp: stats.xp,
       proficiencyBonus: stats.profBonus,
       senses: senses,
-      specialAbilities: selectedSpecial.map((e) => SpecialAbility(name: e.name, desc: e.desc)).toList(),
-      actions: selectedAct.map((e) => MonsterAction(name: e.name, desc: e.desc)).toList(),
-      legendaryActions: selectedLeg.map((e) => LegendaryAction(name: e.name, desc: e.desc)).toList(),
-      reactions: selectedReac.map((e) => MonsterReaction(name: e.name, desc: e.desc)).toList(),
+      specialAbilities: selectedSpecial
+          .map((e) => SpecialAbility(name: e.name, desc: e.desc))
+          .toList(),
+      actions: selectedAct
+          .map((e) => MonsterAction(name: e.name, desc: e.desc))
+          .toList(),
+      legendaryActions: selectedLeg
+          .map((e) => LegendaryAction(name: e.name, desc: e.desc))
+          .toList(),
+      reactions: selectedReac
+          .map((e) => MonsterReaction(name: e.name, desc: e.desc))
+          .toList(),
     );
   }
 }
@@ -181,8 +249,19 @@ class CRStats {
   final int dmgMax; // Daño máximo por ronda sugerido
   final int saveDc; // Dificultad (DC) de salvación típica
   final int xp; // Experiencia otorgada
-  
-  const CRStats(this.cr, this.profBonus, this.ac, this.hpMin, this.hpMax, this.atkBonus, this.dmgMin, this.dmgMax, this.saveDc, this.xp);
+
+  const CRStats(
+    this.cr,
+    this.profBonus,
+    this.ac,
+    this.hpMin,
+    this.hpMax,
+    this.atkBonus,
+    this.dmgMin,
+    this.dmgMax,
+    this.saveDc,
+    this.xp,
+  );
 }
 
 /// Tabla constante de estadísticas de monstruos por Challenge Rating (CR).

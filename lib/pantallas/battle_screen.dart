@@ -13,13 +13,13 @@ import 'package:proyecto_chachipistachi_dnd/pantallas/monster_detail_screen.dart
 class Combatant {
   final Monster monster; // Referencia a los datos base del monstruo
   final String
-      id; // Identificador único para distinguir entre múltiples copias del mismo monstruo
+  id; // Identificador único para distinguir entre múltiples copias del mismo monstruo
   Offset
-      gridPosition; // Posición actual en la cuadrícula (coordenadas de celda x, y)
+  gridPosition; // Posición actual en la cuadrícula (coordenadas de celda x, y)
   int currentHp; // Puntos de vida actuales
   int initiative; // Valor obtenido en la tirada de iniciativa
   Offset
-      turnStartPosition; // Posición al inicio del turno para permitir rehacer movimiento
+  turnStartPosition; // Posición al inicio del turno para permitir rehacer movimiento
   int movedThisTurn; // Contador de casillas recorridas en el turno actual
 
   Combatant({
@@ -27,9 +27,9 @@ class Combatant {
     required this.id,
     this.gridPosition = const Offset(0, 0),
     this.initiative = 0,
-  })  : currentHp = monster.hitPoints ?? 0,
-        turnStartPosition = gridPosition,
-        movedThisTurn = 0;
+  }) : currentHp = monster.hitPoints ?? 0,
+       turnStartPosition = gridPosition,
+       movedThisTurn = 0;
 }
 
 /// Pantalla principal de la simulación de batalla.
@@ -171,8 +171,8 @@ class _BattleScreenState extends State<BattleScreen> {
       // 3. Activamos el combate y reseteamos el turno al absoluto primero
       _isCombatStarted = true;
       _round = 1;
-      _turnIndex = 0; 
-      
+      _turnIndex = 0;
+
       // 4. Preparamos los datos de movimiento para el combatiente que empieza
       _combatants[0].turnStartPosition = _combatants[0].gridPosition;
       _combatants[0].movedThisTurn = 0;
@@ -255,16 +255,15 @@ class _BattleScreenState extends State<BattleScreen> {
               return Row(
                 children: [
                   // Lado izquierdo: Tablero táctico (toma el espacio restante)
-                  Expanded(
-                    flex: 3,
-                    child: _buildBoardArea(),
-                  ),
+                  Expanded(flex: 3, child: _buildBoardArea()),
                   // Lado derecho: Menús de información y lista de iniciativa
                   Container(
                     width: 320,
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border(left: BorderSide(color: Colors.grey[300]!)),
+                      color: Theme.of(context).colorScheme.surface,
+                      border: Border(
+                        left: BorderSide(color: Theme.of(context).dividerColor),
+                      ),
                     ),
                     child: Column(
                       children: [
@@ -273,9 +272,7 @@ class _BattleScreenState extends State<BattleScreen> {
                           _buildActiveCreatureDetails(isLandscape: true),
                         const Divider(height: 1),
                         // Lista de iniciativa vertical en modo horizontal
-                        Expanded(
-                          child: _buildInitiativeBar(isVertical: true),
-                        ),
+                        Expanded(child: _buildInitiativeBar(isVertical: true)),
                       ],
                     ),
                   ),
@@ -304,14 +301,11 @@ class _BattleScreenState extends State<BattleScreen> {
   /// Construye el área del tablero con la cuadrícula y las fichas.
   Widget _buildBoardArea() {
     return Container(
-      color: Colors.grey[300],
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: LayoutBuilder(
         builder: (context, constraints) {
           // Calculamos el tamaño del tablero para que sea siempre el cuadrado más grande posible
-          double boardSide = min(
-            constraints.maxWidth,
-            constraints.maxHeight,
-          );
+          double boardSide = min(constraints.maxWidth, constraints.maxHeight);
           double cellSize = boardSide / _gridCount;
 
           return Align(
@@ -325,9 +319,7 @@ class _BattleScreenState extends State<BattleScreen> {
                   // Al soltar una ficha, calculamos su nueva posición relativa al origen del tablero
                   final renderBox =
                       _boardKey.currentContext!.findRenderObject() as RenderBox;
-                  final localOffset = renderBox.globalToLocal(
-                    details.offset,
-                  );
+                  final localOffset = renderBox.globalToLocal(details.offset);
 
                   setState(() {
                     // Convertimos la posición de píxeles a coordenadas de celda (0, 1, 2...)
@@ -345,8 +337,12 @@ class _BattleScreenState extends State<BattleScreen> {
                     // Si la criatura que se mueve es la que tiene el turno actual, calculamos la distancia
                     if (_isCombatStarted &&
                         _combatants[_turnIndex] == details.data) {
-                      int dx = (nx - details.data.gridPosition.dx).abs().toInt();
-                      int dy = (ny - details.data.gridPosition.dy).abs().toInt();
+                      int dx = (nx - details.data.gridPosition.dx)
+                          .abs()
+                          .toInt();
+                      int dy = (ny - details.data.gridPosition.dy)
+                          .abs()
+                          .toInt();
                       int dist = dx + dy;
                       details.data.movedThisTurn += dist;
                     }
@@ -360,11 +356,12 @@ class _BattleScreenState extends State<BattleScreen> {
                     children: [
                       // Capa de fondo: Dibujado de las líneas de la cuadrícula
                       Container(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.surface,
                         child: CustomPaint(
                           size: Size(boardSide, boardSide),
                           painter: GridPainter(
                             cellSize: cellSize,
+                            gridColor: Theme.of(context).dividerColor,
                             gridCount: _gridCount,
                           ),
                         ),
@@ -394,7 +391,7 @@ class _BattleScreenState extends State<BattleScreen> {
       height: isLandscape ? null : 180,
       constraints: isLandscape ? const BoxConstraints(maxHeight: 250) : null,
       width: double.infinity,
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -405,9 +402,9 @@ class _BattleScreenState extends State<BattleScreen> {
               Expanded(
                 child: Text(
                   "TURNO DE: ${active.name?.toUpperCase()}",
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.brown,
+                    color: Theme.of(context).colorScheme.primary,
                     fontSize: 13,
                   ),
                   maxLines: 2,
@@ -422,7 +419,7 @@ class _BattleScreenState extends State<BattleScreen> {
                     Icons.directions_run,
                     size: 16,
                     color: activeCombatant.movedThisTurn > speedCells
-                        ? Colors.red
+                        ? Theme.of(context).colorScheme.error
                         : Colors.green,
                   ),
                   const SizedBox(width: 4),
@@ -432,8 +429,8 @@ class _BattleScreenState extends State<BattleScreen> {
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                       color: activeCombatant.movedThisTurn > speedCells
-                          ? Colors.red
-                          : Colors.black87,
+                          ? Theme.of(context).colorScheme.error
+                          : Theme.of(context).textTheme.bodyMedium?.color,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -575,14 +572,16 @@ class _BattleScreenState extends State<BattleScreen> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-            // Resaltamos con color ámbar si es el turno de esta criatura
-            color: highlighted ? Colors.amber : Colors.black87,
+            // Resaltamos con el color secundario si es el turno de esta criatura
+            color: highlighted
+                ? Theme.of(context).colorScheme.secondary
+                : Theme.of(context).colorScheme.outline,
             width: highlighted ? 3 : 1.5,
           ),
         ),
         child: ClipOval(
           child: CircleAvatar(
-            backgroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.surface,
             backgroundImage: _getMonsterImage(c.monster),
           ),
         ),
@@ -601,6 +600,7 @@ class _BattleScreenState extends State<BattleScreen> {
       final file = File(m.image!);
       if (file.existsSync()) return FileImage(file);
     }
+    // Si no tiene imagen o el archivo no existe, usamos el placeholder
     return const AssetImage("assets/placeholder.png");
   }
 
@@ -614,67 +614,81 @@ class _BattleScreenState extends State<BattleScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: const Text("Lanzar Dados"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text("Cantidad: "),
-                  IconButton(
-                    icon: const Icon(Icons.remove),
-                    onPressed: quantity > 1
-                        ? () => setDialogState(() => quantity--)
-                        : null,
-                  ),
-                  Text("$quantity",
-                      style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold)),
-                  IconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed: () => setDialogState(() => quantity++),
-                  ),
-                ],
-              ),
-              const Divider(),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                alignment: WrapAlignment.center,
-                children: diceTypes.map((d) {
-                  return ElevatedButton(
-                    onPressed: () {
-                      final random = Random();
-                      List<int> rolls =
-                          List.generate(quantity, (_) => random.nextInt(d) + 1);
-                      int total = rolls.reduce((a, b) => a + b);
-
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            "Tirada: ${quantity}d$d\nResultados: ${rolls.join(', ')}\nTotal: $total",
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          duration: const Duration(seconds: 4),
-                          backgroundColor: Colors.brown[800],
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.brown[100],
-                      foregroundColor: Colors.brown[900],
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("Cantidad: "),
+                    IconButton(
+                      icon: const Icon(Icons.remove),
+                      onPressed: quantity > 1
+                          ? () => setDialogState(() => quantity--)
+                          : null,
                     ),
-                    child: Text("d$d"),
-                  );
-                }).toList(),
-              ),
-            ],
+                    Text(
+                      "$quantity",
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.add),
+                      onPressed: () => setDialogState(() => quantity++),
+                    ),
+                  ],
+                ),
+                const Divider(),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  alignment: WrapAlignment.center,
+                  children: diceTypes.map((d) {
+                    return ElevatedButton(
+                      onPressed: () {
+                        final random = Random();
+                        List<int> rolls = List.generate(
+                          quantity,
+                          (_) => random.nextInt(d) + 1,
+                        );
+                        int total = rolls.reduce((a, b) => a + b);
+
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              "Tirada: ${quantity}d$d\nResultados: ${rolls.join(', ')}\nTotal: $total",
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            duration: const Duration(seconds: 4),
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primary,
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.primaryContainer,
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onPrimaryContainer,
+                      ),
+                      child: Text("d$d"),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -694,7 +708,9 @@ class _BattleScreenState extends State<BattleScreen> {
     return Container(
       height: isVertical ? null : 90,
       width: isVertical ? double.infinity : null,
-      color: isVertical ? Colors.brown[800] : Colors.brown[900],
+      color: isVertical
+          ? Theme.of(context).colorScheme.primaryContainer
+          : Theme.of(context).colorScheme.primary,
       child: ListView.builder(
         scrollDirection: isVertical ? Axis.vertical : Axis.horizontal,
         itemCount: _combatants.length,
@@ -723,7 +739,11 @@ class _BattleScreenState extends State<BattleScreen> {
                   : const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: isActive ? Colors.amber[800] : Colors.brown[700],
+                color: isActive
+                    ? Theme.of(context).colorScheme.secondaryContainer
+                    : Theme.of(
+                        context,
+                      ).colorScheme.primaryContainer.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
@@ -731,8 +751,10 @@ class _BattleScreenState extends State<BattleScreen> {
                 children: [
                   Text(
                     c.monster.name ?? "???",
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: isActive
+                          ? Theme.of(context).colorScheme.onSecondaryContainer
+                          : Colors.white,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                     ),
@@ -740,11 +762,23 @@ class _BattleScreenState extends State<BattleScreen> {
                   ),
                   Text(
                     "HP: ${c.currentHp}",
-                    style: const TextStyle(color: Colors.white, fontSize: 10),
+                    style: TextStyle(
+                      color: isActive
+                          ? Theme.of(context).colorScheme.onSecondaryContainer
+                          : Colors.white,
+                      fontSize: 10,
+                    ),
                   ),
                   Text(
                     "Ini: ${c.initiative}",
-                    style: const TextStyle(color: Colors.white70, fontSize: 9),
+                    style: TextStyle(
+                      color: isActive
+                          ? Theme.of(
+                              context,
+                            ).colorScheme.onSecondaryContainer.withOpacity(0.7)
+                          : Colors.white70,
+                      fontSize: 9,
+                    ),
                   ),
                 ],
               ),
@@ -816,7 +850,10 @@ class _BattleScreenState extends State<BattleScreen> {
 
   /// Muestra el listado de criaturas en cola para poder añadirlas al combate activo.
   void _showAddMonsterDialog() {
-    final battleQueue = Provider.of<BattleQueueProvider>(context, listen: false);
+    final battleQueue = Provider.of<BattleQueueProvider>(
+      context,
+      listen: false,
+    );
     final queuedMonsters = battleQueue.queue;
 
     showDialog(
@@ -841,10 +878,7 @@ class _BattleScreenState extends State<BattleScreen> {
                 else ...[
                   const Text(
                     "COLA DE BATALLA",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.brown,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   ...queuedMonsters.asMap().entries.map((entry) {
@@ -914,11 +948,14 @@ class _BattleScreenState extends State<BattleScreen> {
 
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // Permite que el panel suba cuando aparece el teclado
+      isScrollControlled: true,
+      // Permite que el panel suba cuando aparece el teclado
       builder: (context) => StatefulBuilder(
         builder: (context, setPanelState) => Padding(
           padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom, // Ajuste dinámico por teclado
+            bottom: MediaQuery.of(
+              context,
+            ).viewInsets.bottom, // Ajuste dinámico por teclado
             left: 16,
             right: 16,
             top: 16,
@@ -969,8 +1006,12 @@ class _BattleScreenState extends State<BattleScreen> {
                         color: Colors.red,
                       ),
                       onPressed: () {
-                        setState(() => c.currentHp--); // Cambia el estado global
-                        setPanelState(() => hpEditController.text = c.currentHp.toString()); // Refresca el panel local
+                        setState(
+                          () => c.currentHp--,
+                        ); // Cambia el estado global
+                        setPanelState(
+                          () => hpEditController.text = c.currentHp.toString(),
+                        ); // Refresca el panel local
                       },
                     ),
                     // Campo para editar el HP numéricamente
@@ -1006,7 +1047,9 @@ class _BattleScreenState extends State<BattleScreen> {
                       ),
                       onPressed: () {
                         setState(() => c.currentHp++);
-                        setPanelState(() => hpEditController.text = c.currentHp.toString());
+                        setPanelState(
+                          () => hpEditController.text = c.currentHp.toString(),
+                        );
                       },
                     ),
                   ],
@@ -1026,7 +1069,7 @@ class _BattleScreenState extends State<BattleScreen> {
                     setState(() {
                       c.initiative = int.tryParse(val) ?? 0;
                       // El reordenamiento es automático y en tiempo real
-                      _sortInitiative(); 
+                      _sortInitiative();
                     });
                   },
                   onSubmitted: (val) {
@@ -1091,12 +1134,18 @@ class _BattleScreenState extends State<BattleScreen> {
 class GridPainter extends CustomPainter {
   final double cellSize; // Tamaño lateral de cada celda en píxeles
   final int gridCount; // Cantidad de celdas por lado (cuadrícula N x N)
-  GridPainter({required this.cellSize, required this.gridCount});
+  final Color gridColor;
+
+  GridPainter({
+    required this.cellSize,
+    required this.gridCount,
+    this.gridColor = Colors.black12,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.black.withOpacity(0.1)
+      ..color = gridColor
       ..strokeWidth = 1;
 
     // Dibujamos líneas equidistantes para formar la rejilla
@@ -1108,5 +1157,7 @@ class GridPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant GridPainter oldDelegate) =>
-      oldDelegate.cellSize != cellSize || oldDelegate.gridCount != gridCount;
+      oldDelegate.cellSize != cellSize ||
+      oldDelegate.gridCount != gridCount ||
+      oldDelegate.gridColor != gridColor;
 }
