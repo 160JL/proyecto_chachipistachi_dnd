@@ -5,6 +5,8 @@ import 'package:proyecto_chachipistachi_dnd/models/monster.dart';
 import 'package:proyecto_chachipistachi_dnd/service/monster_storage_service.dart';
 import 'package:proyecto_chachipistachi_dnd/service/battle_queue_service.dart';
 
+import 'package:proyecto_chachipistachi_dnd/pantallas/monster_detail_screen.dart';
+
 /// Representa a un individuo o criatura específica presente en el campo de batalla.
 /// Mantiene el estado dinámico del combate como vida actual, posición y su iniciativa.
 class Combatant {
@@ -84,11 +86,15 @@ class _BattleScreenState extends State<BattleScreen> {
         currentId = _combatants[_turnIndex].id;
       }
 
-      // Ordenación descendente por valor de iniciativa
-      _combatants.sort((a, b) => b.initiative.compareTo(a.initiative));
+      // Ordenación: Iniciativa (Desc) -> Destreza (Desc) -> Nombre (Asc)
+      _combatants.sort((a, b) {
+        int cmp = b.initiative.compareTo(a.initiative);
+        if (cmp != 0) return cmp;
+        return (b.monster.dexterity ?? 0).compareTo(a.monster.dexterity ?? 0);
+      });
 
-      // Si teníamos a alguien con el turno, buscamos su nueva posición en la lista ordenada
-      if (currentId != null) {
+      // Si el combate ya inició, buscamos la nueva posición del que tenía el turno
+      if (_isCombatStarted && currentId != null) {
         int newIndex = _combatants.indexWhere((c) => c.id == currentId);
         _turnIndex = newIndex != -1 ? newIndex : 0;
       } else {
@@ -146,21 +152,29 @@ class _BattleScreenState extends State<BattleScreen> {
     if (_combatants.isEmpty) return;
     final random = Random();
     setState(() {
+      // 1. Tiradas de iniciativa
       for (var c in _combatants) {
         // Iniciativa = 1d20 + Modificador de Destreza
         int roll = random.nextInt(20) + 1;
         int mod = _getModifier(c.monster.dexterity);
         c.initiative = roll + mod;
       }
+
+      // 2. Ordenamos manualmente aquí para asegurar un inicio limpio (Iniciativa -> Destreza)
+      _combatants.sort((a, b) {
+        int cmp = b.initiative.compareTo(a.initiative);
+        if (cmp != 0) return cmp;
+        return (b.monster.dexterity ?? 0).compareTo(a.monster.dexterity ?? 0);
+      });
+
+      // 3. Activamos el combate y reseteamos el turno al absoluto primero
       _isCombatStarted = true;
       _round = 1;
-      _sortInitiative(); // Ordenamos tras las tiradas iniciales
+      _turnIndex = 0; 
       
-      // Preparamos los datos de movimiento para el primer combatiente de la ronda
-      if (_combatants.isNotEmpty) {
-        _combatants[0].turnStartPosition = _combatants[0].gridPosition;
-        _combatants[0].movedThisTurn = 0;
-      }
+      // 4. Preparamos los datos de movimiento para el combatiente que empieza
+      _combatants[0].turnStartPosition = _combatants[0].gridPosition;
+      _combatants[0].movedThisTurn = 0;
     });
   }
 
@@ -181,8 +195,7 @@ class _BattleScreenState extends State<BattleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // La interfaz se divide en un AppBar con controles globales,
-    // el tablero táctico central y paneles informativos inferiores.
+    // La interfaz se divide en un AppBar con controles globales y el cuerpo principal adaptativo.
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -205,6 +218,12 @@ class _BattleScreenState extends State<BattleScreen> {
                 ),
               ),
             ),
+          // Botón para tirar dados
+          IconButton(
+            icon: const Icon(Icons.casino),
+            onPressed: _showDiceRollingDialog,
+            tooltip: "Lanzar Dados",
+          ),
           // Configuración de las dimensiones de la cuadrícula
           IconButton(
             icon: const Icon(Icons.settings),
@@ -228,120 +247,151 @@ class _BattleScreenState extends State<BattleScreen> {
         ],
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Área principal del tablero de combate con lógica de Drag & Drop
-            Expanded(
-              child: Container(
-                color: Colors.grey[300],
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    // Calculamos el tamaño del tablero para que sea siempre el cuadrado más grande posible
-                    double boardSide = min(
-                      constraints.maxWidth,
-                      constraints.maxHeight,
-                    );
-                    double cellSize = boardSide / _gridCount;
-
-                    return Align(
-                      alignment: Alignment.topCenter,
-                      child: SizedBox(
-                        width: boardSide,
-                        height: boardSide,
-                        child: DragTarget<Combatant>(
-                          onWillAcceptWithDetails: (details) => true,
-                          onAcceptWithDetails: (details) {
-                            // Al soltar una ficha, calculamos su nueva posición relativa al origen del tablero
-                            final renderBox =
-                                _boardKey.currentContext!.findRenderObject()
-                                    as RenderBox;
-                            final localOffset = renderBox.globalToLocal(
-                              details.offset,
-                            );
-
-                            setState(() {
-                              // Convertimos la posición de píxeles a coordenadas de celda (0, 1, 2...)
-                              double nx = (localOffset.dx / cellSize).roundToDouble();
-                              double ny = (localOffset.dy / cellSize).roundToDouble();
-
-                              int multiplier = _getSizeMultiplier(
-                                details.data.monster.size,
-                              );
-
-                              // Restringimos la posición para que la criatura no se salga del tablero,
-                              // considerando que las criaturas grandes ocupan más de una celda.
-                              nx = nx
-                                  .clamp(0, _gridCount - multiplier)
-                                  .toDouble();
-                              ny = ny
-                                  .clamp(0, _gridCount - multiplier)
-                                  .toDouble();
-
-                              // Si la criatura que se mueve es la que tiene el turno actual, calculamos la distancia
-                              if (_isCombatStarted &&
-                                  _combatants[_turnIndex] == details.data) {
-                                int dx = (nx - details.data.gridPosition.dx)
-                                    .abs()
-                                    .toInt();
-                                int dy = (ny - details.data.gridPosition.dy)
-                                    .abs()
-                                    .toInt();
-                                // Implementación simplificada de distancia de Manhattan: suma de desplazamientos x e y
-                                int dist = dx + dy;
-                                details.data.movedThisTurn += dist;
-                              }
-
-                              details.data.gridPosition = Offset(nx, ny);
-                            });
-                          },
-                          builder: (context, candidateData, rejectedData) {
-                            return Stack(
-                              key: _boardKey,
-                              children: [
-                                // Capa de fondo: Dibujado de las líneas de la cuadrícula
-                                Container(
-                                  color: Colors.white,
-                                  child: CustomPaint(
-                                    size: Size(boardSide, boardSide),
-                                    painter: GridPainter(
-                                      cellSize: cellSize,
-                                      gridCount: _gridCount,
-                                    ),
-                                  ),
-                                ),
-                                // Capa superior: Renderizado de todas las fichas activas
-                                ..._combatants.map(
-                                  (c) => _buildMonsterToken(c, cellSize),
-                                ),
-                              ],
-                            );
-                          },
+        child: OrientationBuilder(
+          builder: (context, orientation) {
+            // Si la pantalla está en horizontal, usamos un diseño de filas (Tablero | Menús)
+            if (orientation == Orientation.landscape) {
+              return Row(
+                children: [
+                  // Lado izquierdo: Tablero táctico (toma el espacio restante)
+                  Expanded(
+                    flex: 3,
+                    child: _buildBoardArea(),
+                  ),
+                  // Lado derecho: Menús de información y lista de iniciativa
+                  Container(
+                    width: 320,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border(left: BorderSide(color: Colors.grey[300]!)),
+                    ),
+                    child: Column(
+                      children: [
+                        // Panel de detalles del combatiente activo
+                        if (_isCombatStarted && _combatants.isNotEmpty)
+                          _buildActiveCreatureDetails(isLandscape: true),
+                        const Divider(height: 1),
+                        // Lista de iniciativa vertical en modo horizontal
+                        Expanded(
+                          child: _buildInitiativeBar(isVertical: true),
                         ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            // Panel informativo de la criatura que tiene el turno activo
-            if (_isCombatStarted && _combatants.isNotEmpty)
-              _buildActiveCreatureDetails(),
-            // Barra inferior con la lista completa de iniciativa y HP rápido
-            _buildInitiativeBar(),
-          ],
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            } else {
+              // Si la pantalla está en vertical, mantenemos el diseño original de columnas
+              return Column(
+                children: [
+                  // Área principal del tablero
+                  Expanded(child: _buildBoardArea()),
+                  // Panel informativo inferior
+                  if (_isCombatStarted && _combatants.isNotEmpty)
+                    _buildActiveCreatureDetails(),
+                  // Barra de iniciativa horizontal
+                  _buildInitiativeBar(),
+                ],
+              );
+            }
+          },
         ),
       ),
     );
   }
 
+  /// Construye el área del tablero con la cuadrícula y las fichas.
+  Widget _buildBoardArea() {
+    return Container(
+      color: Colors.grey[300],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Calculamos el tamaño del tablero para que sea siempre el cuadrado más grande posible
+          double boardSide = min(
+            constraints.maxWidth,
+            constraints.maxHeight,
+          );
+          double cellSize = boardSide / _gridCount;
+
+          return Align(
+            alignment: Alignment.topCenter,
+            child: SizedBox(
+              width: boardSide,
+              height: boardSide,
+              child: DragTarget<Combatant>(
+                onWillAcceptWithDetails: (details) => true,
+                onAcceptWithDetails: (details) {
+                  // Al soltar una ficha, calculamos su nueva posición relativa al origen del tablero
+                  final renderBox =
+                      _boardKey.currentContext!.findRenderObject() as RenderBox;
+                  final localOffset = renderBox.globalToLocal(
+                    details.offset,
+                  );
+
+                  setState(() {
+                    // Convertimos la posición de píxeles a coordenadas de celda (0, 1, 2...)
+                    double nx = (localOffset.dx / cellSize).roundToDouble();
+                    double ny = (localOffset.dy / cellSize).roundToDouble();
+
+                    int multiplier = _getSizeMultiplier(
+                      details.data.monster.size,
+                    );
+
+                    // Restringimos la posición para que la criatura no se salga del tablero
+                    nx = nx.clamp(0, _gridCount - multiplier).toDouble();
+                    ny = ny.clamp(0, _gridCount - multiplier).toDouble();
+
+                    // Si la criatura que se mueve es la que tiene el turno actual, calculamos la distancia
+                    if (_isCombatStarted &&
+                        _combatants[_turnIndex] == details.data) {
+                      int dx = (nx - details.data.gridPosition.dx).abs().toInt();
+                      int dy = (ny - details.data.gridPosition.dy).abs().toInt();
+                      int dist = dx + dy;
+                      details.data.movedThisTurn += dist;
+                    }
+
+                    details.data.gridPosition = Offset(nx, ny);
+                  });
+                },
+                builder: (context, candidateData, rejectedData) {
+                  return Stack(
+                    key: _boardKey,
+                    children: [
+                      // Capa de fondo: Dibujado de las líneas de la cuadrícula
+                      Container(
+                        color: Colors.white,
+                        child: CustomPaint(
+                          size: Size(boardSide, boardSide),
+                          painter: GridPainter(
+                            cellSize: cellSize,
+                            gridCount: _gridCount,
+                          ),
+                        ),
+                      ),
+                      // Capa superior: Renderizado de todas las fichas activas
+                      ..._combatants.map(
+                        (c) => _buildMonsterToken(c, cellSize),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   /// Construye el panel con las acciones, reacciones y movimiento de la criatura activa.
-  Widget _buildActiveCreatureDetails() {
+  Widget _buildActiveCreatureDetails({bool isLandscape = false}) {
     final activeCombatant = _combatants[_turnIndex];
     final active = activeCombatant.monster;
     int speedCells = _getSpeedInCells(active.speed?.walk);
 
     return Container(
-      height: 180,
+      height: isLandscape ? null : 180,
+      constraints: isLandscape ? const BoxConstraints(maxHeight: 250) : null,
       width: double.infinity,
       color: Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -508,14 +558,13 @@ class _BattleScreenState extends State<BattleScreen> {
     );
   }
 
-  /// Genera la representación visual circular o rectangular de la ficha.
+  /// Genera la representación visual circular de la ficha.
   Widget _tokenCircle(
     Combatant c,
     double size,
     bool highlighted, {
     double opacity = 1.0,
   }) {
-    int multiplier = _getSizeMultiplier(c.monster.size);
     return Opacity(
       opacity: opacity,
       child: Container(
@@ -523,11 +572,7 @@ class _BattleScreenState extends State<BattleScreen> {
         height: size,
         padding: const EdgeInsets.all(2),
         decoration: BoxDecoration(
-          // Las criaturas medianas/pequeñas son circulares, las grandes usan un cuadrado redondeado
-          shape: multiplier == 1 ? BoxShape.circle : BoxShape.rectangle,
-          borderRadius: multiplier > 1
-              ? BorderRadius.circular(size * 0.1)
-              : null,
+          shape: BoxShape.circle,
           border: Border.all(
             // Resaltamos con color ámbar si es el turno de esta criatura
             color: highlighted ? Colors.amber : Colors.black87,
@@ -538,75 +583,170 @@ class _BattleScreenState extends State<BattleScreen> {
           child: CircleAvatar(
             backgroundColor: Colors.white,
             backgroundImage: _getMonsterImage(c.monster),
-            // Fallback si no hay imagen: inicial del nombre
-            child: c.monster.image == null
-                ? Text(
-                    c.monster.name?[0] ?? "?",
-                    style: TextStyle(
-                      fontSize: size * 0.4,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  )
-                : null,
           ),
         ),
       ),
     );
   }
 
-  /// Resuelve la imagen del monstruo desde diversas fuentes (URL completa, API base o archivo local).
-  ImageProvider? _getMonsterImage(Monster m) {
+  /// Resuelve la imagen del monstruo desde diversas fuentes.
+  /// Si no hay imagen, devuelve un placeholder local.
+  ImageProvider _getMonsterImage(Monster m) {
     if (m.image != null && m.image!.isNotEmpty) {
       if (m.image!.startsWith('http')) return NetworkImage(m.image!);
-      if (m.image!.startsWith('/api'))
+      if (m.image!.startsWith('/api')) {
         return NetworkImage("https://www.dnd5eapi.co${m.image}");
+      }
       final file = File(m.image!);
       if (file.existsSync()) return FileImage(file);
     }
-    return null;
+    return const AssetImage("assets/placeholder.png");
   }
 
-  /// Crea la franja inferior horizontal que muestra el orden de iniciativa.
-  Widget _buildInitiativeBar() {
+  /// Muestra un menú/diálogo para elegir cantidad y tipo de dados a lanzar.
+  void _showDiceRollingDialog() {
+    int quantity = 1;
+    final diceTypes = [4, 6, 8, 10, 12, 20];
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text("Lanzar Dados"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("Cantidad: "),
+                  IconButton(
+                    icon: const Icon(Icons.remove),
+                    onPressed: quantity > 1
+                        ? () => setDialogState(() => quantity--)
+                        : null,
+                  ),
+                  Text("$quantity",
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold)),
+                  IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: () => setDialogState(() => quantity++),
+                  ),
+                ],
+              ),
+              const Divider(),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                alignment: WrapAlignment.center,
+                children: diceTypes.map((d) {
+                  return ElevatedButton(
+                    onPressed: () {
+                      final random = Random();
+                      List<int> rolls =
+                          List.generate(quantity, (_) => random.nextInt(d) + 1);
+                      int total = rolls.reduce((a, b) => a + b);
+
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            "Tirada: ${quantity}d$d\nResultados: ${rolls.join(', ')}\nTotal: $total",
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          duration: const Duration(seconds: 4),
+                          backgroundColor: Colors.brown[800],
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.brown[100],
+                      foregroundColor: Colors.brown[900],
+                    ),
+                    child: Text("d$d"),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("CERRAR"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Crea la franja o lista que muestra el orden de iniciativa.
+  /// Puede ser horizontal (para móvil vertical) o vertical (para móvil horizontal).
+  Widget _buildInitiativeBar({bool isVertical = false}) {
     if (_combatants.isEmpty) return const SizedBox.shrink();
     return Container(
-      height: 90,
-      color: Colors.brown[900],
+      height: isVertical ? null : 90,
+      width: isVertical ? double.infinity : null,
+      color: isVertical ? Colors.brown[800] : Colors.brown[900],
       child: ListView.builder(
-        scrollDirection: Axis.horizontal,
+        scrollDirection: isVertical ? Axis.vertical : Axis.horizontal,
         itemCount: _combatants.length,
         itemBuilder: (context, index) {
           final c = _combatants[index];
           bool isActive = index == _turnIndex;
-          return Container(
-            width: 100,
-            margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: isActive ? Colors.amber[800] : Colors.brown[700],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  c.monster.name ?? "???",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
+          return GestureDetector(
+            onTap: () {
+              // Al tocar la tarjeta, navegamos a los detalles de la criatura en modo lectura.
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MonsterDetailScreen(
+                    monster: c.monster,
+                    monsterName: c.monster.name ?? "Detalles",
+                    showActions: false, // Solo consulta durante la batalla
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
-                Text(
-                  "HP: ${c.currentHp}",
-                  style: const TextStyle(color: Colors.white, fontSize: 10),
-                ),
-                Text(
-                  "Ini: ${c.initiative}",
-                  style: const TextStyle(color: Colors.white70, fontSize: 9),
-                ),
-              ],
+              );
+            },
+            child: Container(
+              width: isVertical ? double.infinity : 100,
+              height: isVertical ? 70 : null,
+              margin: isVertical
+                  ? const EdgeInsets.symmetric(horizontal: 8, vertical: 4)
+                  : const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: isActive ? Colors.amber[800] : Colors.brown[700],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    c.monster.name ?? "???",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    "HP: ${c.currentHp}",
+                    style: const TextStyle(color: Colors.white, fontSize: 10),
+                  ),
+                  Text(
+                    "Ini: ${c.initiative}",
+                    style: const TextStyle(color: Colors.white70, fontSize: 9),
+                  ),
+                ],
+              ),
             ),
           );
         },
