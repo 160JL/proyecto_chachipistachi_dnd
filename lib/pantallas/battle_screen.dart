@@ -10,13 +10,13 @@ import 'package:proyecto_chachipistachi_dnd/service/battle_queue_service.dart';
 class Combatant {
   final Monster monster; // Referencia a los datos base del monstruo
   final String
-  id; // Identificador único para distinguir entre múltiples copias del mismo monstruo
+      id; // Identificador único para distinguir entre múltiples copias del mismo monstruo
   Offset
-  gridPosition; // Posición actual en la cuadrícula (coordenadas de celda x, y)
+      gridPosition; // Posición actual en la cuadrícula (coordenadas de celda x, y)
   int currentHp; // Puntos de vida actuales
   int initiative; // Valor obtenido en la tirada de iniciativa
   Offset
-  turnStartPosition; // Posición al inicio del turno para permitir rehacer movimiento
+      turnStartPosition; // Posición al inicio del turno para permitir rehacer movimiento
   int movedThisTurn; // Contador de casillas recorridas en el turno actual
 
   Combatant({
@@ -24,9 +24,9 @@ class Combatant {
     required this.id,
     this.gridPosition = const Offset(0, 0),
     this.initiative = 0,
-  }) : currentHp = monster.hitPoints ?? 0,
-       turnStartPosition = gridPosition,
-       movedThisTurn = 0;
+  })  : currentHp = monster.hitPoints ?? 0,
+        turnStartPosition = gridPosition,
+        movedThisTurn = 0;
 }
 
 /// Pantalla principal de la simulación de batalla.
@@ -38,7 +38,7 @@ class BattleScreen extends StatefulWidget {
   State<BattleScreen> createState() => _BattleScreenState();
 }
 
-/// Estado de la pantalla de batalla que controla la lógica del tablero, 
+/// Estado de la pantalla de batalla que controla la lógica del tablero,
 /// el sistema de turnos y la gestión de combatientes.
 class _BattleScreenState extends State<BattleScreen> {
   // Lista de todas las criaturas activas en el combate
@@ -74,11 +74,27 @@ class _BattleScreenState extends State<BattleScreen> {
   }
 
   /// Ordena la lista de combatientes basándose en su valor de iniciativa (descendente).
-  /// Reinicia el índice de turno al primer combatiente tras el reordenamiento.
+  /// Mantiene el marcador de turno en la misma criatura si el combate ya está en curso
+  /// para evitar que el turno salte a otro combatiente tras un reordenamiento.
   void _sortInitiative() {
     setState(() {
+      String? currentId;
+      // Si el combate ya empezó, guardamos el ID de quien tiene el turno
+      if (_isCombatStarted && _turnIndex < _combatants.length) {
+        currentId = _combatants[_turnIndex].id;
+      }
+
+      // Ordenación descendente por valor de iniciativa
       _combatants.sort((a, b) => b.initiative.compareTo(a.initiative));
-      _turnIndex = 0;
+
+      // Si teníamos a alguien con el turno, buscamos su nueva posición en la lista ordenada
+      if (currentId != null) {
+        int newIndex = _combatants.indexWhere((c) => c.id == currentId);
+        _turnIndex = newIndex != -1 ? newIndex : 0;
+      } else {
+        // Si el combate no ha empezado, el turno se reinicia al primero (el de mayor iniciativa)
+        _turnIndex = 0;
+      }
     });
   }
 
@@ -92,7 +108,8 @@ class _BattleScreenState extends State<BattleScreen> {
         _turnIndex = 0;
         _round++;
       }
-      // Reiniciar contadores de movimiento para el nuevo turno
+      // Al empezar un nuevo turno, guardamos la posición actual para permitir "deshacer"
+      // y reseteamos el contador de movimiento.
       _combatants[_turnIndex].turnStartPosition =
           _combatants[_turnIndex].gridPosition;
       _combatants[_turnIndex].movedThisTurn = 0;
@@ -100,6 +117,7 @@ class _BattleScreenState extends State<BattleScreen> {
   }
 
   /// Extrae el valor numérico de la velocidad (ej: "30 ft." -> 30) y lo convierte a casillas.
+  /// En D&D 5e, una casilla suele equivaler a 5 pies (ft).
   int _getSpeedInCells(String? speedStr) {
     if (speedStr == null) return 0;
     final match = RegExp(r'(\d+)').firstMatch(speedStr);
@@ -107,7 +125,7 @@ class _BattleScreenState extends State<BattleScreen> {
     return int.parse(match.group(1)!) ~/ 5;
   }
 
-  /// Devuelve la pieza activa a su posición inicial del turno.
+  /// Devuelve la pieza activa a su posición inicial del turno y limpia el contador de movimiento.
   void _resetMovement() {
     setState(() {
       final active = _combatants[_turnIndex];
@@ -117,26 +135,28 @@ class _BattleScreenState extends State<BattleScreen> {
   }
 
   /// Calcula el modificador de atributo basado en el valor base (D&D 5e).
+  /// Fórmula: (Valor - 10) / 2 redondeado hacia abajo.
   int _getModifier(int? stat) {
     if (stat == null) return 0;
     return ((stat - 10) / 2).floor();
   }
 
-  /// Inicia el combate: Tira iniciativa para todos y activa el orden de turnos.
+  /// Inicia el combate: Realiza tiradas automáticas de iniciativa para todos y activa el orden.
   void _startCombat() {
     if (_combatants.isEmpty) return;
     final random = Random();
     setState(() {
       for (var c in _combatants) {
-        // Fórmula de iniciativa: 1d20 + Modificador de Destreza
+        // Iniciativa = 1d20 + Modificador de Destreza
         int roll = random.nextInt(20) + 1;
         int mod = _getModifier(c.monster.dexterity);
         c.initiative = roll + mod;
       }
       _isCombatStarted = true;
       _round = 1;
-      _sortInitiative();
-      // Inicializar movimiento para el primer combatiente
+      _sortInitiative(); // Ordenamos tras las tiradas iniciales
+      
+      // Preparamos los datos de movimiento para el primer combatiente de la ronda
       if (_combatants.isNotEmpty) {
         _combatants[0].turnStartPosition = _combatants[0].gridPosition;
         _combatants[0].movedThisTurn = 0;
@@ -144,8 +164,8 @@ class _BattleScreenState extends State<BattleScreen> {
     });
   }
 
-  /// Determina el multiplicador de tamaño basado en la categoría de la criatura.
-  /// Large = 2x2, Huge = 3x3, Gargantuan = 4x4. Otros = 1x1.
+  /// Determina el espacio que ocupa la criatura en la cuadrícula según su tamaño.
+  /// Large = 2x2 celdas, Huge = 3x3, Gargantuan = 4x4. Otros (Small/Medium) = 1x1.
   int _getSizeMultiplier(String? size) {
     switch (size?.toLowerCase()) {
       case 'large':
@@ -161,10 +181,11 @@ class _BattleScreenState extends State<BattleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // La interfaz se divide en un AppBar con controles globales, 
-    // el tablero táctico superior y paneles inferiores de información.
+    // La interfaz se divide en un AppBar con controles globales,
+    // el tablero táctico central y paneles informativos inferiores.
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(
           !_isCombatStarted
               ? "Preparación ($_gridCount x $_gridCount)"
@@ -184,19 +205,19 @@ class _BattleScreenState extends State<BattleScreen> {
                 ),
               ),
             ),
-          // Botón para configurar dimensiones del tablero
+          // Configuración de las dimensiones de la cuadrícula
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: _showSettingsDialog,
             tooltip: "Configurar Tablero",
           ),
-          // Botón para seleccionar y añadir monstruos del repositorio
+          // Acceso a la cola para añadir nuevas criaturas al campo
           IconButton(
             icon: const Icon(Icons.person_add),
             onPressed: _showAddMonsterDialog,
             tooltip: "Añadir Criatura",
           ),
-          // Botón para saltar al siguiente turno
+          // Avance manual de turnos
           IconButton(
             icon: const Icon(Icons.skip_next),
             onPressed: _isCombatStarted && _combatants.isNotEmpty
@@ -206,112 +227,114 @@ class _BattleScreenState extends State<BattleScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Área principal del tablero de combate
-          Expanded(
-            child: Container(
-              color: Colors.grey[300],
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  // Ajuste automático: El tablero siempre es cuadrado y ocupa el máximo espacio posible
-                  double boardSide = min(
-                    constraints.maxWidth,
-                    constraints.maxHeight,
-                  );
-                  double cellSize = boardSide / _gridCount;
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Área principal del tablero de combate con lógica de Drag & Drop
+            Expanded(
+              child: Container(
+                color: Colors.grey[300],
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Calculamos el tamaño del tablero para que sea siempre el cuadrado más grande posible
+                    double boardSide = min(
+                      constraints.maxWidth,
+                      constraints.maxHeight,
+                    );
+                    double cellSize = boardSide / _gridCount;
 
-                  return Align(
-                    alignment: Alignment.topCenter,
-                    child: SizedBox(
-                      width: boardSide,
-                      height: boardSide,
-                      child: DragTarget<Combatant>(
-                        // Gestiona el soltado de las fichas tras el arrastre
-                        onWillAcceptWithDetails: (details) => true,
-                        onAcceptWithDetails: (details) {
-                          // Obtenemos la posición exacta del drop relativa al tablero
-                          final renderBox =
-                              _boardKey.currentContext!.findRenderObject()
-                                  as RenderBox;
-                          final localOffset = renderBox.globalToLocal(
-                            details.offset,
-                          );
-
-                          setState(() {
-                            // Calculamos la celda (x, y) destino usando redondeo para que se base en el centro
-                            double nx = (localOffset.dx / cellSize).roundToDouble();
-                            double ny = (localOffset.dy / cellSize).roundToDouble();
-
-                            int multiplier = _getSizeMultiplier(
-                              details.data.monster.size,
+                    return Align(
+                      alignment: Alignment.topCenter,
+                      child: SizedBox(
+                        width: boardSide,
+                        height: boardSide,
+                        child: DragTarget<Combatant>(
+                          onWillAcceptWithDetails: (details) => true,
+                          onAcceptWithDetails: (details) {
+                            // Al soltar una ficha, calculamos su nueva posición relativa al origen del tablero
+                            final renderBox =
+                                _boardKey.currentContext!.findRenderObject()
+                                    as RenderBox;
+                            final localOffset = renderBox.globalToLocal(
+                              details.offset,
                             );
 
-                            // Aseguramos que la ficha se mantenga dentro de los límites del tablero considerando su tamaño
-                            nx = nx
-                                .clamp(0, _gridCount - multiplier)
-                                .toDouble();
-                            ny = ny
-                                .clamp(0, _gridCount - multiplier)
-                                .toDouble();
+                            setState(() {
+                              // Convertimos la posición de píxeles a coordenadas de celda (0, 1, 2...)
+                              double nx = (localOffset.dx / cellSize).roundToDouble();
+                              double ny = (localOffset.dy / cellSize).roundToDouble();
 
-                            // Calcular distancia recorrida si es su turno
-                            if (_isCombatStarted &&
-                                _combatants[_turnIndex] == details.data) {
-                              int dx = (nx - details.data.gridPosition.dx)
-                                  .abs()
-                                  .toInt();
-                              int dy = (ny - details.data.gridPosition.dy)
-                                  .abs()
-                                  .toInt();
-                              // Las diagonales cuentan como 2 casillas (Manhattan distance)
-                              int dist = dx + dy;
-                              details.data.movedThisTurn += dist;
-                            }
+                              int multiplier = _getSizeMultiplier(
+                                details.data.monster.size,
+                              );
 
-                            details.data.gridPosition = Offset(nx, ny);
-                          });
-                        },
-                        builder: (context, candidateData, rejectedData) {
-                          return Stack(
-                            key: _boardKey,
-                            children: [
-                              // Capa inferior: Dibujo de la cuadrícula blanca
-                              Container(
-                                color: Colors.white,
-                                child: CustomPaint(
-                                  size: Size(boardSide, boardSide),
-                                  painter: GridPainter(
-                                    cellSize: cellSize,
-                                    gridCount: _gridCount,
+                              // Restringimos la posición para que la criatura no se salga del tablero,
+                              // considerando que las criaturas grandes ocupan más de una celda.
+                              nx = nx
+                                  .clamp(0, _gridCount - multiplier)
+                                  .toDouble();
+                              ny = ny
+                                  .clamp(0, _gridCount - multiplier)
+                                  .toDouble();
+
+                              // Si la criatura que se mueve es la que tiene el turno actual, calculamos la distancia
+                              if (_isCombatStarted &&
+                                  _combatants[_turnIndex] == details.data) {
+                                int dx = (nx - details.data.gridPosition.dx)
+                                    .abs()
+                                    .toInt();
+                                int dy = (ny - details.data.gridPosition.dy)
+                                    .abs()
+                                    .toInt();
+                                // Implementación simplificada de distancia de Manhattan: suma de desplazamientos x e y
+                                int dist = dx + dy;
+                                details.data.movedThisTurn += dist;
+                              }
+
+                              details.data.gridPosition = Offset(nx, ny);
+                            });
+                          },
+                          builder: (context, candidateData, rejectedData) {
+                            return Stack(
+                              key: _boardKey,
+                              children: [
+                                // Capa de fondo: Dibujado de las líneas de la cuadrícula
+                                Container(
+                                  color: Colors.white,
+                                  child: CustomPaint(
+                                    size: Size(boardSide, boardSide),
+                                    painter: GridPainter(
+                                      cellSize: cellSize,
+                                      gridCount: _gridCount,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              // Capa superior: Mapeo de todos los combatientes a sus fichas visuales
-                              ..._combatants.map(
-                                (c) => _buildMonsterToken(c, cellSize),
-                              ),
-                            ],
-                          );
-                        },
+                                // Capa superior: Renderizado de todas las fichas activas
+                                ..._combatants.map(
+                                  (c) => _buildMonsterToken(c, cellSize),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             ),
-          ),
-          // Sección de detalles de la criatura activa (Acciones, Reacciones, etc.)
-          if (_isCombatStarted && _combatants.isNotEmpty)
-            _buildActiveCreatureDetails(),
-          // Barra inferior informativa con el orden de iniciativa y estados rápidos
-          _buildInitiativeBar(),
-        ],
+            // Panel informativo de la criatura que tiene el turno activo
+            if (_isCombatStarted && _combatants.isNotEmpty)
+              _buildActiveCreatureDetails(),
+            // Barra inferior con la lista completa de iniciativa y HP rápido
+            _buildInitiativeBar(),
+          ],
+        ),
       ),
     );
   }
 
-  /// Muestra las acciones, acciones legendarias y reacciones de la criatura que tiene el turno.
+  /// Construye el panel con las acciones, reacciones y movimiento de la criatura activa.
   Widget _buildActiveCreatureDetails() {
     final activeCombatant = _combatants[_turnIndex];
     final active = activeCombatant.monster;
@@ -328,16 +351,22 @@ class _BattleScreenState extends State<BattleScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                "TURNO DE: ${active.name?.toUpperCase()}",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.brown,
-                  fontSize: 13,
+              Expanded(
+                child: Text(
+                  "TURNO DE: ${active.name?.toUpperCase()}",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.brown,
+                    fontSize: 13,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 8),
               Row(
                 children: [
+                  // Icono y contador de movimiento recorrido frente al máximo permitido
                   Icon(
                     Icons.directions_run,
                     size: 16,
@@ -357,6 +386,7 @@ class _BattleScreenState extends State<BattleScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
+                  // Botón para deshacer el movimiento del turno actual
                   IconButton(
                     icon: const Icon(Icons.history, size: 20),
                     onPressed: activeCombatant.movedThisTurn > 0
@@ -376,7 +406,7 @@ class _BattleScreenState extends State<BattleScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Acciones Estándar
+                  // Listado de Acciones normales del monstruo
                   if (active.actions != null && active.actions!.isNotEmpty) ...[
                     const Text(
                       "ACCIONES:",
@@ -395,7 +425,7 @@ class _BattleScreenState extends State<BattleScreen> {
                       ),
                     ),
                   ],
-                  // Reacciones
+                  // Listado de Reacciones
                   if (active.reactions != null &&
                       active.reactions!.isNotEmpty) ...[
                     const SizedBox(height: 8),
@@ -417,7 +447,7 @@ class _BattleScreenState extends State<BattleScreen> {
                       ),
                     ),
                   ],
-                  // Acciones Legendarias
+                  // Acciones Legendarias (si la criatura es de tipo jefe)
                   if (active.legendaryActions != null &&
                       active.legendaryActions!.isNotEmpty) ...[
                     const SizedBox(height: 8),
@@ -448,7 +478,8 @@ class _BattleScreenState extends State<BattleScreen> {
     );
   }
 
-  /// Crea el widget visual de una ficha de monstruo que se puede arrastrar.
+  /// Construye el widget interactivo (ficha) para un combatiente.
+  /// Incluye lógica de arrastre (Draggable) y toque para gestión rápida.
   Widget _buildMonsterToken(Combatant c, double cellSize) {
     bool isCurrentTurn = _combatants.isNotEmpty && _combatants[_turnIndex] == c;
     int multiplier = _getSizeMultiplier(c.monster.size);
@@ -458,26 +489,26 @@ class _BattleScreenState extends State<BattleScreen> {
       top: c.gridPosition.dy * cellSize,
       child: Draggable<Combatant>(
         data: c,
-        // Centra la ficha bajo el puntero durante el arrastre
+        // Centra la ficha bajo el dedo/puntero al empezar a arrastrar
         dragAnchorStrategy: (draggable, context, position) =>
             Offset(cellSize * multiplier / 2, cellSize * multiplier / 2),
-        // Visualización de la ficha mientras se mueve por la pantalla
+        // Imagen que "vuela" mientras arrastramos
         feedback: _tokenCircle(c, cellSize * multiplier, true, opacity: 0.8),
-        // Visualización de la posición original mientras se arrastra
+        // Lo que queda en el tablero mientras la ficha está siendo arrastrada (opaco)
         childWhenDragging: Opacity(
           opacity: 0.3,
           child: _tokenCircle(c, cellSize * multiplier, false),
         ),
         child: GestureDetector(
           onTap: () => _showMonsterQuickAction(c),
-          // Abre el menú de acciones al tocar
+          // El círculo visual de la ficha
           child: _tokenCircle(c, cellSize * multiplier, isCurrentTurn),
         ),
       ),
     );
   }
 
-  /// Construye el círculo visual de la ficha, incluyendo la imagen y el borde de estado.
+  /// Genera la representación visual circular o rectangular de la ficha.
   Widget _tokenCircle(
     Combatant c,
     double size,
@@ -492,13 +523,13 @@ class _BattleScreenState extends State<BattleScreen> {
         height: size,
         padding: const EdgeInsets.all(2),
         decoration: BoxDecoration(
-          // Si el multiplicador es 1 usamos círculo, si es mayor usamos un cuadrado redondeado para ocupar mejor el espacio
+          // Las criaturas medianas/pequeñas son circulares, las grandes usan un cuadrado redondeado
           shape: multiplier == 1 ? BoxShape.circle : BoxShape.rectangle,
           borderRadius: multiplier > 1
               ? BorderRadius.circular(size * 0.1)
               : null,
           border: Border.all(
-            // El color ámbar indica que es el turno actual de esta criatura
+            // Resaltamos con color ámbar si es el turno de esta criatura
             color: highlighted ? Colors.amber : Colors.black87,
             width: highlighted ? 3 : 1.5,
           ),
@@ -507,7 +538,7 @@ class _BattleScreenState extends State<BattleScreen> {
           child: CircleAvatar(
             backgroundColor: Colors.white,
             backgroundImage: _getMonsterImage(c.monster),
-            // Si no hay imagen, mostramos la inicial del nombre
+            // Fallback si no hay imagen: inicial del nombre
             child: c.monster.image == null
                 ? Text(
                     c.monster.name?[0] ?? "?",
@@ -523,7 +554,7 @@ class _BattleScreenState extends State<BattleScreen> {
     );
   }
 
-  /// Resuelve la fuente de la imagen del monstruo (Red, API oficial o Almacenamiento local).
+  /// Resuelve la imagen del monstruo desde diversas fuentes (URL completa, API base o archivo local).
   ImageProvider? _getMonsterImage(Monster m) {
     if (m.image != null && m.image!.isNotEmpty) {
       if (m.image!.startsWith('http')) return NetworkImage(m.image!);
@@ -535,7 +566,7 @@ class _BattleScreenState extends State<BattleScreen> {
     return null;
   }
 
-  /// Crea un carrusel horizontal en la parte inferior con la información de todos los combatientes.
+  /// Crea la franja inferior horizontal que muestra el orden de iniciativa.
   Widget _buildInitiativeBar() {
     if (_combatants.isEmpty) return const SizedBox.shrink();
     return Container(
@@ -583,7 +614,7 @@ class _BattleScreenState extends State<BattleScreen> {
     );
   }
 
-  /// Diálogo para configurar el número de casillas por lado del tablero.
+  /// Diálogo de configuración para redimensionar la cuadrícula del tablero.
   void _showSettingsDialog() {
     int tempCount = _gridCount;
 
@@ -619,7 +650,7 @@ class _BattleScreenState extends State<BattleScreen> {
               onPressed: () {
                 setState(() {
                   _gridCount = tempCount;
-                  // Al cambiar el tamaño, forzamos que todas las fichas se queden dentro del nuevo límite
+                  // Al cambiar el tamaño, reubicamos las fichas que hayan quedado fuera de los nuevos límites
                   for (var c in _combatants) {
                     int multiplier = _getSizeMultiplier(c.monster.size);
                     c.gridPosition = Offset(
@@ -642,7 +673,7 @@ class _BattleScreenState extends State<BattleScreen> {
     );
   }
 
-  /// Muestra un diálogo de selección para añadir monstruos de la cola de batalla.
+  /// Muestra el listado de criaturas en cola para poder añadirlas al combate activo.
   void _showAddMonsterDialog() async {
     final queuedMonsters = await BattleQueueService().getQueue();
     if (!mounted) return;
@@ -690,12 +721,14 @@ class _BattleScreenState extends State<BattleScreen> {
                           color: Colors.redAccent,
                         ),
                         onPressed: () async {
+                          // Permite quitar un monstruo de la cola sin añadirlo a la batalla
                           await BattleQueueService().removeFromQueue(entry.key);
                           Navigator.pop(context);
-                          _showAddMonsterDialog(); // Refrescar el diálogo
+                          _showAddMonsterDialog(); // Refrescamos el diálogo para ver el cambio
                         },
                       ),
                       onTap: () {
+                        // Añade el monstruo seleccionado al campo de batalla
                         _addMonsterToBattle(m);
                         Navigator.pop(context);
                       },
@@ -728,21 +761,23 @@ class _BattleScreenState extends State<BattleScreen> {
     );
   }
 
-  /// Panel inferior de gestión rápida para un combatiente específico.
-  /// Permite modificar vida, establecer iniciativa o eliminar la criatura del combate.
+  /// Despliega un panel inferior para realizar ajustes rápidos a un combatiente (HP, Iniciativa, Reacciones).
   void _showMonsterQuickAction(Combatant c) {
-    // Controlador para la edición directa de la vida
+    // Controladores para sincronizar los campos de texto con el estado del combatiente
     final hpEditController = TextEditingController(
       text: c.currentHp.toString(),
+    );
+    final initiativeEditController = TextEditingController(
+      text: c.initiative.toString(),
     );
 
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
+      isScrollControlled: true, // Permite que el panel suba cuando aparece el teclado
       builder: (context) => StatefulBuilder(
         builder: (context, setPanelState) => Padding(
           padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
+            bottom: MediaQuery.of(context).viewInsets.bottom, // Ajuste dinámico por teclado
             left: 16,
             right: 16,
             top: 16,
@@ -758,7 +793,7 @@ class _BattleScreenState extends State<BattleScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                // Mostrar Clase de Armadura (AC)
+                // Visualización de la Clase de Armadura (AC)
                 if (c.monster.armorClass != null &&
                     c.monster.armorClass!.isNotEmpty)
                   Padding(
@@ -774,7 +809,7 @@ class _BattleScreenState extends State<BattleScreen> {
                   ),
                 const SizedBox(height: 16),
 
-                // --- Gestión de Vida ---
+                // --- Control de Puntos de Vida (HP) ---
                 const Text(
                   "PUNTOS DE VIDA",
                   style: TextStyle(
@@ -786,22 +821,18 @@ class _BattleScreenState extends State<BattleScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Botón -1
+                    // Botón para restar 1 HP
                     IconButton(
                       icon: const Icon(
                         Icons.remove_circle_outline,
                         color: Colors.red,
                       ),
                       onPressed: () {
-                        setState(
-                          () => c.currentHp--,
-                        ); // Actualiza la pantalla principal (tablero e iniciativa)
-                        setPanelState(
-                          () => hpEditController.text = c.currentHp.toString(),
-                        ); // Actualiza el panel localmente
+                        setState(() => c.currentHp--); // Cambia el estado global
+                        setPanelState(() => hpEditController.text = c.currentHp.toString()); // Refresca el panel local
                       },
                     ),
-                    // Campo de edición directa de HP
+                    // Campo para editar el HP numéricamente
                     SizedBox(
                       width: 60,
                       child: TextField(
@@ -826,41 +857,42 @@ class _BattleScreenState extends State<BattleScreen> {
                       "/ ${c.monster.hitPoints}",
                       style: const TextStyle(fontSize: 20, color: Colors.grey),
                     ),
-                    // Botón +1
+                    // Botón para sumar 1 HP
                     IconButton(
                       icon: const Icon(
                         Icons.add_circle_outline,
                         color: Colors.green,
                       ),
                       onPressed: () {
-                        setState(
-                          () => c.currentHp++,
-                        ); // Actualiza la pantalla principal
-                        setPanelState(
-                          () => hpEditController.text = c.currentHp.toString(),
-                        ); // Actualiza el panel
+                        setState(() => c.currentHp++);
+                        setPanelState(() => hpEditController.text = c.currentHp.toString());
                       },
                     ),
                   ],
                 ),
                 const SizedBox(height: 10),
 
-                // Entrada para el valor de iniciativa
+                // --- Gestión de la Iniciativa ---
+                // Permite corregir el orden de turnos manualmente
                 TextField(
+                  controller: initiativeEditController,
                   decoration: const InputDecoration(
                     labelText: "Iniciativa",
                     border: OutlineInputBorder(),
                   ),
                   keyboardType: TextInputType.number,
-                  onSubmitted: (val) {
+                  onChanged: (val) {
                     setState(() {
                       c.initiative = int.tryParse(val) ?? 0;
-                      _sortInitiative(); // Reordenar la lista al cambiar iniciativa
+                      // El reordenamiento es automático y en tiempo real
+                      _sortInitiative(); 
                     });
+                  },
+                  onSubmitted: (val) {
                     Navigator.pop(context);
                   },
                 ),
-                // Mostrar Reacciones si existen
+                // Panel informativo de Reacciones (útil para que el DM no las olvide)
                 if (c.monster.reactions != null &&
                     c.monster.reactions!.isNotEmpty) ...[
                   const Divider(height: 30),
@@ -895,7 +927,7 @@ class _BattleScreenState extends State<BattleScreen> {
                   ),
                 ],
                 const Divider(),
-                // Botón para retirar la criatura del combate
+                // Opción para eliminar permanentemente a la criatura de esta batalla (ej: si muere)
                 ListTile(
                   leading: const Icon(Icons.delete, color: Colors.red),
                   title: const Text("Eliminar de la batalla"),
@@ -914,10 +946,10 @@ class _BattleScreenState extends State<BattleScreen> {
   }
 }
 
-/// Dibujante personalizado encargado de renderizar las líneas de la cuadrícula del tablero.
+/// Pintor personalizado para dibujar la rejilla del tablero táctico.
 class GridPainter extends CustomPainter {
-  final double cellSize; // Tamaño de la celda en píxeles
-  final int gridCount; // Número de celdas por lado
+  final double cellSize; // Tamaño lateral de cada celda en píxeles
+  final int gridCount; // Cantidad de celdas por lado (cuadrícula N x N)
   GridPainter({required this.cellSize, required this.gridCount});
 
   @override
@@ -926,7 +958,7 @@ class GridPainter extends CustomPainter {
       ..color = Colors.black.withOpacity(0.1)
       ..strokeWidth = 1;
 
-    // Dibujar líneas verticales y horizontales equidistantes
+    // Dibujamos líneas equidistantes para formar la rejilla
     for (double i = 0; i <= gridCount * cellSize; i += cellSize) {
       canvas.drawLine(Offset(i, 0), Offset(i, gridCount * cellSize), paint);
       canvas.drawLine(Offset(0, i), Offset(gridCount * cellSize, i), paint);
