@@ -14,6 +14,9 @@ class MonsterDetailScreen extends StatefulWidget {
   final Monster? monster; // Objeto Monster directo (opcional para local).
   final int?
   monsterIndex; // Índice en el almacenamiento local si es una criatura guardada.
+  /// Indica si se deben mostrar los botones de acción (BATALLA, EDITAR). 
+  /// Útil para reutilizar la pantalla como modo lectura.
+  final bool showActions; 
 
   const MonsterDetailScreen({
     super.key,
@@ -21,6 +24,7 @@ class MonsterDetailScreen extends StatefulWidget {
     required this.monsterName,
     this.monster,
     this.monsterIndex,
+    this.showActions = true,
   });
 
   @override
@@ -51,6 +55,7 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
     }
   }
 
+  /// Construye el widget de imagen de la criatura resolviendo la ruta (URL o local).
   Widget _buildMonsterImage(String? imagePath) {
     if (imagePath == null || imagePath.isEmpty) return const SizedBox.shrink();
 
@@ -93,7 +98,7 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.monsterName),
         actions: [
-          if (_currentMonster != null) ...[
+          if (_currentMonster != null && widget.showActions) ...[
             TextButton.icon(
               onPressed: () async {
                 await BattleQueueService().addToQueue(_currentMonster!);
