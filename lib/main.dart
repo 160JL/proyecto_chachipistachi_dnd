@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/battle_screen.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/monster_list_screen.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/monster_create_screen.dart';
+import 'package:proyecto_chachipistachi_dnd/pantallas/combat_list_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -25,6 +26,7 @@ class MyApp extends StatelessWidget {
         "/api": (context) => const MonsterListScreen(isLocal: false),
         "/create": (context) => const MonsterCreateScreen(),
         "/repository": (context) => const MonsterListScreen(isLocal: true),
+        "/initiative": (context) => const CombatListScreen(),
       },
     );
   }
@@ -59,6 +61,12 @@ class _MyHomePageState extends State<MyHomePage> {
                 "Simulación de batalla",
                 Icons.grid_on,
                 "/battlescreen",
+              ),
+              _buildMenuButton(
+                context,
+                "Iniciativa (Tracker)",
+                Icons.list_alt,
+                "/initiative",
               ),
               _buildMenuButton(
                 context,
