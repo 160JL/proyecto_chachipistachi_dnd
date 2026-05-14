@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:provider/provider.dart';
@@ -6,6 +8,12 @@ import 'package:proyecto_chachipistachi_dnd/service/connection_service.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/monster_create_screen.dart';
 
 import 'package:proyecto_chachipistachi_dnd/providers/battle_queue_provider.dart';
+import 'dart:convert';
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:share_plus/share_plus.dart';
 
 /// Pantalla que muestra la ficha detallada de una criatura.
 class MonsterDetailScreen extends StatefulWidget {
@@ -36,6 +44,12 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
   // Future que contendrá el objeto Monster con todos sus datos.
   late Future<Monster> futureMonster;
   Monster? _currentMonster;
+
+  // Clave para capturar la ficha como imagen.
+  final GlobalKey _boundaryKey = GlobalKey();
+
+  // Clave para controlar el Scaffold (apertura del drawer).
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -95,71 +109,19 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.monsterName),
         actions: [
-          if (_currentMonster != null && widget.showActions) ...[
-            TextButton.icon(
-              onPressed: () {
-                Provider.of<BattleQueueProvider>(
-                  context,
-                  listen: false,
-                ).addToQueue(_currentMonster!);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        "${_currentMonster!.name} añadido a la lista de batalla",
-                      ),
-                    ),
-                  );
-                }
-              },
-              icon: const Icon(Icons.shield, color: Colors.white),
-              label: const Text(
-                "BATALLA",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            TextButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => MonsterCreateScreen(
-                      baseMonster: _currentMonster,
-                      isEditing: widget.monster != null,
-                      monsterIndex: widget.monsterIndex,
-                    ),
-                  ),
-                ).then((saved) {
-                  if (saved == true) {
-                    Navigator.pop(
-                      context,
-                      true,
-                    ); // Cerramos detalles y avisamos al repositorio para recargar.
-                  }
-                });
-              },
-              icon: Icon(
-                widget.monster != null ? Icons.edit : Icons.copy,
-                color: Colors.white,
-              ),
-              label: Text(
-                widget.monster != null ? 'EDITAR' : 'USAR COMO BASE',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
+          IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+            tooltip: "Menú de acciones",
+          ),
         ],
       ),
+      endDrawer: _buildActionDrawer(),
       body: SafeArea(
         child: FutureBuilder<Monster>(
           future: futureMonster,
@@ -186,246 +148,256 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
               });
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(16.0),
-                child: Card(
-                  elevation: 8,
-                  margin: EdgeInsets.zero,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.zero,
-                  ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface, // Pergamino auténtico (o modo oscuro)
-                      border: Border.all(
-                        color: Theme.of(context).colorScheme.secondary,
-                        width: 1,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(
-                            Theme.of(context).brightness == Brightness.dark
-                                ? 120
-                                : 50,
-                          ),
-                          blurRadius: 4,
-                          offset: const Offset(2, 2),
-                        ),
-                      ],
+                child: RepaintBoundary(
+                  key: _boundaryKey,
+                  child: Card(
+                    elevation: 8,
+                    margin: EdgeInsets.zero,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.zero,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Borde decorativo superior
-                        Container(
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surface, // Pergamino auténtico (o modo oscuro)
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.secondary,
+                          width: 1,
                         ),
-                        Padding(
-                          padding: const EdgeInsets.all(20.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Imagen principal de la criatura.
-                              if (monster.image != null)
-                                Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(
-                                      bottom: 16.0,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(
+                              Theme.of(context).brightness == Brightness.dark
+                                  ? 120
+                                  : 50,
+                            ),
+                            blurRadius: 4,
+                            offset: const Offset(2, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Borde decorativo superior
+                          Container(
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Imagen principal de la criatura.
+                                if (monster.image != null)
+                                  Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 16.0,
+                                      ),
+                                      child: _buildMonsterImage(monster.image),
                                     ),
-                                    child: _buildMonsterImage(monster.image),
+                                  ),
+
+                                // Encabezado: Nombre y Descripción básica (Tamaño, Tipo, Alineamiento).
+                                Text(
+                                  monster.name?.toUpperCase() ?? "SIN NOMBRE",
+                                  style: TextStyle(
+                                    fontSize: 32,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'serif',
                                   ),
                                 ),
-
-                              // Encabezado: Nombre y Descripción básica (Tamaño, Tipo, Alineamiento).
-                              Text(
-                                monster.name?.toUpperCase() ?? "SIN NOMBRE",
-                                style: TextStyle(
-                                  fontSize: 32,
-                                  color: Theme.of(context).colorScheme.primary,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'serif',
-                                ),
-                              ),
-                              Text(
-                                "${monster.size} ${monster.type}, ${monster.alignment}",
-                                style: TextStyle(
-                                  fontStyle: FontStyle.italic,
-                                  fontSize: 16,
-                                  color: Theme.of(context).textTheme.bodyMedium?.color,
-                                  fontFamily: 'serif',
-                                ),
-                              ),
-                              const _DndDivider(),
-
-                              // Sección de Estadísticas Básicas.
-                              _buildStatBlockRow(
-                                "Armor Class",
-                                _formatArmorClass(monster.armorClass),
-                              ),
-                              _buildStatBlockRow(
-                                "Hit Points",
-                                "${monster.hitPoints} (${monster.hitDice})",
-                              ),
-                              _buildStatBlockRow(
-                                "Speed",
-                                _formatSpeed(monster.speed),
-                              ),
-                              const _DndDivider(),
-
-                              // Bloque de Atributos principales.
-                              _buildAbilityTable(monster),
-                              const _DndDivider(),
-
-                              // Competencias y otros rasgos.
-                              if (monster.proficiencies != null &&
-                                  monster.proficiencies!.any(
-                                    (p) =>
-                                        p.proficiency?.name?.contains(
-                                          'Saving Throw',
-                                        ) ??
-                                        false,
-                                  ))
-                                _buildStatBlockRow(
-                                  "Saving Throws",
-                                  _formatProficiencies(
-                                    monster.proficiencies!
-                                        .where(
-                                          (p) =>
-                                              p.proficiency?.name?.contains(
-                                                'Saving Throw',
-                                              ) ??
-                                              false,
-                                        )
-                                        .toList(),
+                                Text(
+                                  "${monster.size} ${monster.type}, ${monster.alignment}",
+                                  style: TextStyle(
+                                    fontStyle: FontStyle.italic,
+                                    fontSize: 16,
+                                    color: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium?.color,
+                                    fontFamily: 'serif',
                                   ),
                                 ),
-                              if (monster.proficiencies != null &&
-                                  monster.proficiencies!.any(
-                                    (p) =>
-                                        p.proficiency?.name?.contains(
-                                          'Skill',
-                                        ) ??
-                                        false,
-                                  ))
-                                _buildStatBlockRow(
-                                  "Skills",
-                                  _formatProficiencies(
-                                    monster.proficiencies!
-                                        .where(
-                                          (p) =>
-                                              p.proficiency?.name?.contains(
-                                                'Skill',
-                                              ) ??
-                                              false,
-                                        )
-                                        .toList(),
-                                  ),
-                                ),
-                              if (monster.damageVulnerabilities?.isNotEmpty ??
-                                  false)
-                                _buildStatBlockRow(
-                                  "Damage Vulnerabilities",
-                                  monster.damageVulnerabilities!.join(", "),
-                                ),
-                              if (monster.damageResistances?.isNotEmpty ??
-                                  false)
-                                _buildStatBlockRow(
-                                  "Damage Resistances",
-                                  monster.damageResistances!.join(", "),
-                                ),
-                              if (monster.damageImmunities?.isNotEmpty ?? false)
-                                _buildStatBlockRow(
-                                  "Damage Immunities",
-                                  monster.damageImmunities!.join(", "),
-                                ),
-                              if (monster.conditionImmunities?.isNotEmpty ??
-                                  false)
-                                _buildStatBlockRow(
-                                  "Condition Immunities",
-                                  monster.conditionImmunities!
-                                      .map((e) => e.name)
-                                      .join(", "),
-                                ),
+                                const _DndDivider(),
 
-                              _buildStatBlockRow(
-                                "Senses",
-                                _formatSenses(monster.senses),
-                              ),
-                              _buildStatBlockRow(
-                                "Languages",
-                                monster.languages ?? "—",
-                              ),
-                              _buildStatBlockRow(
-                                "Challenge",
-                                "${monster.challengeRating} (${monster.xp ?? 0} XP)",
-                              ),
-                              _buildStatBlockRow(
-                                "Proficiency Bonus",
-                                "+${monster.proficiencyBonus ?? 0}",
-                              ),
-                              const _DndDivider(),
-
-                              // Listado de Habilidades Especiales (Pasivas).
-                              if (monster.specialAbilities != null &&
-                                  monster.specialAbilities!.isNotEmpty)
-                                ...monster.specialAbilities!.map(
-                                  (ability) => _buildStatBlockAbility(
-                                    ability.name,
-                                    ability.desc,
-                                  ),
+                                // Sección de Estadísticas Básicas.
+                                _buildStatBlockRow(
+                                  "Armor Class",
+                                  _formatArmorClass(monster.armorClass),
                                 ),
-
-                              // Listado de Acciones de combate.
-                              if (monster.actions != null &&
-                                  monster.actions!.isNotEmpty) ...[
-                                const SizedBox(height: 12),
-                                const _DndHeader("Actions"),
-                                ...monster.actions!.map(
-                                  (action) => _buildStatBlockAbility(
-                                    action.name,
-                                    action.desc,
-                                  ),
+                                _buildStatBlockRow(
+                                  "Hit Points",
+                                  "${monster.hitPoints} (${monster.hitDice})",
                                 ),
+                                _buildStatBlockRow(
+                                  "Speed",
+                                  _formatSpeed(monster.speed),
+                                ),
+                                const _DndDivider(),
+
+                                // Bloque de Atributos principales.
+                                _buildAbilityTable(monster),
+                                const _DndDivider(),
+
+                                // Competencias y otros rasgos.
+                                if (monster.proficiencies != null &&
+                                    monster.proficiencies!.any(
+                                      (p) =>
+                                          p.proficiency?.name?.contains(
+                                            'Saving Throw',
+                                          ) ??
+                                          false,
+                                    ))
+                                  _buildStatBlockRow(
+                                    "Saving Throws",
+                                    _formatProficiencies(
+                                      monster.proficiencies!
+                                          .where(
+                                            (p) =>
+                                                p.proficiency?.name?.contains(
+                                                  'Saving Throw',
+                                                ) ??
+                                                false,
+                                          )
+                                          .toList(),
+                                    ),
+                                  ),
+                                if (monster.proficiencies != null &&
+                                    monster.proficiencies!.any(
+                                      (p) =>
+                                          p.proficiency?.name?.contains(
+                                            'Skill',
+                                          ) ??
+                                          false,
+                                    ))
+                                  _buildStatBlockRow(
+                                    "Skills",
+                                    _formatProficiencies(
+                                      monster.proficiencies!
+                                          .where(
+                                            (p) =>
+                                                p.proficiency?.name?.contains(
+                                                  'Skill',
+                                                ) ??
+                                                false,
+                                          )
+                                          .toList(),
+                                    ),
+                                  ),
+                                if (monster.damageVulnerabilities?.isNotEmpty ??
+                                    false)
+                                  _buildStatBlockRow(
+                                    "Damage Vulnerabilities",
+                                    monster.damageVulnerabilities!.join(", "),
+                                  ),
+                                if (monster.damageResistances?.isNotEmpty ??
+                                    false)
+                                  _buildStatBlockRow(
+                                    "Damage Resistances",
+                                    monster.damageResistances!.join(", "),
+                                  ),
+                                if (monster.damageImmunities?.isNotEmpty ??
+                                    false)
+                                  _buildStatBlockRow(
+                                    "Damage Immunities",
+                                    monster.damageImmunities!.join(", "),
+                                  ),
+                                if (monster.conditionImmunities?.isNotEmpty ??
+                                    false)
+                                  _buildStatBlockRow(
+                                    "Condition Immunities",
+                                    monster.conditionImmunities!
+                                        .map((e) => e.name)
+                                        .join(", "),
+                                  ),
+
+                                _buildStatBlockRow(
+                                  "Senses",
+                                  _formatSenses(monster.senses),
+                                ),
+                                _buildStatBlockRow(
+                                  "Languages",
+                                  monster.languages ?? "—",
+                                ),
+                                _buildStatBlockRow(
+                                  "Challenge",
+                                  "${monster.challengeRating} (${monster.xp ?? 0} XP)",
+                                ),
+                                _buildStatBlockRow(
+                                  "Proficiency Bonus",
+                                  "+${monster.proficiencyBonus ?? 0}",
+                                ),
+                                const _DndDivider(),
+
+                                // Listado de Habilidades Especiales (Pasivas).
+                                if (monster.specialAbilities != null &&
+                                    monster.specialAbilities!.isNotEmpty)
+                                  ...monster.specialAbilities!.map(
+                                    (ability) => _buildStatBlockAbility(
+                                      ability.name,
+                                      ability.desc,
+                                    ),
+                                  ),
+
+                                // Listado de Acciones de combate.
+                                if (monster.actions != null &&
+                                    monster.actions!.isNotEmpty) ...[
+                                  const SizedBox(height: 12),
+                                  const _DndHeader("Actions"),
+                                  ...monster.actions!.map(
+                                    (action) => _buildStatBlockAbility(
+                                      action.name,
+                                      action.desc,
+                                    ),
+                                  ),
+                                ],
+
+                                // Listado de Acciones Legendarias.
+                                if (monster.legendaryActions != null &&
+                                    monster.legendaryActions!.isNotEmpty) ...[
+                                  const SizedBox(height: 12),
+                                  const _DndHeader("Legendary Actions"),
+                                  ...monster.legendaryActions!.map(
+                                    (action) => _buildStatBlockAbility(
+                                      action.name,
+                                      action.desc,
+                                    ),
+                                  ),
+                                ],
+
+                                // Listado de Reacciones.
+                                if (monster.reactions != null &&
+                                    monster.reactions!.isNotEmpty) ...[
+                                  const SizedBox(height: 12),
+                                  const _DndHeader("Reactions"),
+                                  ...monster.reactions!.map(
+                                    (reaction) => _buildStatBlockAbility(
+                                      reaction.name,
+                                      reaction.desc,
+                                    ),
+                                  ),
+                                ],
+                                const SizedBox(height: 16),
                               ],
-
-                              // Listado de Acciones Legendarias.
-                              if (monster.legendaryActions != null &&
-                                  monster.legendaryActions!.isNotEmpty) ...[
-                                const SizedBox(height: 12),
-                                const _DndHeader("Legendary Actions"),
-                                ...monster.legendaryActions!.map(
-                                  (action) => _buildStatBlockAbility(
-                                    action.name,
-                                    action.desc,
-                                  ),
-                                ),
-                              ],
-
-                              // Listado de Reacciones.
-                              if (monster.reactions != null &&
-                                  monster.reactions!.isNotEmpty) ...[
-                                const SizedBox(height: 12),
-                                const _DndHeader("Reactions"),
-                                ...monster.reactions!.map(
-                                  (reaction) => _buildStatBlockAbility(
-                                    reaction.name,
-                                    reaction.desc,
-                                  ),
-                                ),
-                              ],
-                              const SizedBox(height: 16),
-                            ],
+                            ),
                           ),
-                        ),
-                        // Borde decorativo inferior
-                        Container(
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.secondary,
+                          // Borde decorativo inferior
+                          Container(
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -449,11 +421,7 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
       padding: const EdgeInsets.symmetric(vertical: 2.0),
       child: RichText(
         text: TextSpan(
-          style: TextStyle(
-            color: primaryColor,
-            fontSize: 15,
-            height: 1.3,
-          ),
+          style: TextStyle(color: primaryColor, fontSize: 15, height: 1.3),
           children: [
             TextSpan(
               text: "$label: ",
@@ -527,7 +495,10 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
         const SizedBox(height: 2),
         Text(
           "$value ($modStr)",
-          style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 14),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.primary,
+            fontSize: 14,
+          ),
         ),
       ],
     );
@@ -618,6 +589,199 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
       parts.add("Percepción pasiva ${senses.passivePerception}");
     return parts.isEmpty ? "N/A" : parts.join(", ");
   }
+
+  /// Construye el menú lateral con las acciones de la criatura.
+  Widget _buildActionDrawer() {
+    if (_currentMonster == null)
+      return const Drawer(child: Center(child: CircularProgressIndicator()));
+
+    return Drawer(
+      child: Column(
+        children: [
+          DrawerHeader(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            child: Center(
+              child: Text(
+                _currentMonster!.name?.toUpperCase() ?? "ACCIONES",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+          if (widget.showActions) ...[
+            ListTile(
+              leading: const Icon(Icons.shield),
+              title: const Text("Añadir a Batalla"),
+              onTap: () {
+                Provider.of<BattleQueueProvider>(
+                  context,
+                  listen: false,
+                ).addToQueue(_currentMonster!);
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("${_currentMonster!.name} añadido a batalla"),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(widget.monster != null ? Icons.edit : Icons.copy),
+              title: Text(
+                widget.monster != null ? "Editar Criatura" : "Usar como Base",
+              ),
+              onTap: () {
+                Navigator.pop(context); // Cerrar drawer
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MonsterCreateScreen(
+                      baseMonster: _currentMonster,
+                      isEditing: widget.monster != null,
+                      monsterIndex: widget.monsterIndex,
+                    ),
+                  ),
+                ).then((saved) {
+                  if (saved == true) Navigator.pop(context, true);
+                });
+              },
+            ),
+            const Divider(),
+          ],
+          ListTile(
+            leading: const Icon(Icons.code),
+            title: const Text("Exportar como JSON"),
+            onTap: () {
+              Navigator.pop(context);
+              _exportAsJson();
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.image),
+            title: const Text("Exportar como PNG"),
+            onTap: () {
+              Navigator.pop(context);
+              _exportAsPng();
+            },
+          ),
+          const Spacer(),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              "D&D 5e Stat Block",
+              style: TextStyle(
+                fontStyle: FontStyle.italic,
+                color: Theme.of(context).disabledColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Exporta los datos de la criatura en formato JSON.
+  Future<void> _exportAsJson() async {
+    try {
+      final jsonStr = jsonEncode(_currentMonster!.toJson());
+      
+      // Intentamos abrir el selector de archivos para guardar
+      // En móviles, saveFile requiere los bytes directamente
+      final bytes = utf8.encode(jsonStr);
+      String? outputPath = await FilePicker.platform.saveFile(
+        dialogTitle: 'Guardar como JSON',
+        fileName: '${_currentMonster!.name}_stats.json',
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+        bytes: bytes,
+      );
+
+      if (outputPath != null) {
+        // En móviles, si pasamos 'bytes' a saveFile, la librería ya guarda el archivo.
+        // Intentar escribirlo de nuevo con File(path).writeAsString puede dar error de permisos (Errno 13).
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("JSON guardado correctamente")),
+          );
+        }
+      } else {
+        // Si cancela el guardado, mostramos el diálogo con el contenido igualmente
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text("Exportación JSON"),
+              content: SingleChildScrollView(child: SelectableText(jsonStr)),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("CERRAR"),
+                ),
+              ],
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error al exportar JSON: $e")),
+        );
+      }
+    }
+  }
+
+  /// Captura la ficha visual y la exporta como imagen PNG.
+  Future<void> _exportAsPng() async {
+    try {
+      final boundary = _boundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) return;
+
+      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final bytes = byteData!.buffer.asUint8List();
+
+      // Selector de archivos para guardar la imagen
+      // Pasamos los bytes para compatibilidad con Android/iOS
+      String? outputPath = await FilePicker.platform.saveFile(
+        dialogTitle: 'Guardar Ficha como PNG',
+        fileName: '${_currentMonster!.name}_ficha.png',
+        type: FileType.image,
+        bytes: bytes,
+      );
+
+      if (outputPath != null) {
+        // Si pasamos los bytes, la librería gestiona el guardado delegando en el sistema.
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Imagen guardada correctamente")),
+          );
+        }
+      } else {
+        // Si cancela, permitimos compartir mediante el menú del sistema
+        final directory = await getTemporaryDirectory();
+        final tempPath = '${directory.path}/temp_monster_share.png';
+        final tempFile = File(tempPath);
+        await tempFile.writeAsBytes(bytes);
+        
+        if (mounted) {
+          await Share.shareXFiles([XFile(tempPath)], text: 'Ficha de ${_currentMonster!.name}');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error al generar imagen: $e")),
+        );
+      }
+    }
+  }
 }
 
 /// Widget personalizado para los divisores cónicos estilo D&D.
@@ -639,6 +803,7 @@ class _DndDivider extends StatelessWidget {
 
 class _DndDividerPainter extends CustomPainter {
   final Color color;
+
   _DndDividerPainter(this.color);
 
   @override
@@ -687,11 +852,7 @@ class _DndHeader extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           title,
-          style: TextStyle(
-            fontSize: 24,
-            color: color,
-            fontFamily: 'serif',
-          ),
+          style: TextStyle(fontSize: 24, color: color, fontFamily: 'serif'),
         ),
         Divider(color: color, thickness: 1, height: 8),
         const SizedBox(height: 4),
