@@ -152,6 +152,13 @@ class MonsterAbilityRegistryService {
     print('Registro de habilidades construido: ${registry.length} entradas.');
   }
 
+  /// Borra el registro actual de habilidades, forzando una reconstrucción la próxima vez.
+  Future<void> clearRegistry() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_registryDataKey);
+    await prefs.setBool(_registryBuiltKey, false);
+  }
+
   /// Añade nuevas entradas al registro existente, evitando duplicados.
   ///
   /// [newEntries] — Lista de entradas a añadir (normalmente de una criatura

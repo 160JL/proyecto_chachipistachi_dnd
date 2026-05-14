@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'dart:convert';
+import 'dart:math';
 import '../models/monster.dart';
 import '../models/monster_ability_registry.dart';
 import '../service/monster_storage_service.dart';
 import '../service/monster_ability_registry_service.dart';
+import '../service/monster_randomizer_service.dart';
 
 /// Pantalla para la creación de nuevas criaturas personalizadas.
 /// Permite definir todos los atributos y guardarlos de forma local persistente.
@@ -426,36 +428,58 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
 
       // Registra las acciones de combate estándar.
       for (final a in (newMonster.actions ?? [])) {
-        newRegistryEntries.add(AbilityRegistryEntry(
-          name: a.name ?? '', desc: a.desc ?? '',
-          category: 'action', challengeRating: cr, monsterName: monsterName,
-        ));
+        newRegistryEntries.add(
+          AbilityRegistryEntry(
+            name: a.name ?? '',
+            desc: a.desc ?? '',
+            category: 'action',
+            challengeRating: cr,
+            monsterName: monsterName,
+          ),
+        );
       }
       // Registra las reacciones de combate.
       for (final r in (newMonster.reactions ?? [])) {
-        newRegistryEntries.add(AbilityRegistryEntry(
-          name: r.name ?? '', desc: r.desc ?? '',
-          category: 'reaction', challengeRating: cr, monsterName: monsterName,
-        ));
+        newRegistryEntries.add(
+          AbilityRegistryEntry(
+            name: r.name ?? '',
+            desc: r.desc ?? '',
+            category: 'reaction',
+            challengeRating: cr,
+            monsterName: monsterName,
+          ),
+        );
       }
       // Registra las acciones legendarias.
       for (final la in (newMonster.legendaryActions ?? [])) {
-        newRegistryEntries.add(AbilityRegistryEntry(
-          name: la.name ?? '', desc: la.desc ?? '',
-          category: 'legendary_action', challengeRating: cr, monsterName: monsterName,
-        ));
+        newRegistryEntries.add(
+          AbilityRegistryEntry(
+            name: la.name ?? '',
+            desc: la.desc ?? '',
+            category: 'legendary_action',
+            challengeRating: cr,
+            monsterName: monsterName,
+          ),
+        );
       }
       // Registra las habilidades especiales / rasgos pasivos.
       for (final sa in (newMonster.specialAbilities ?? [])) {
-        newRegistryEntries.add(AbilityRegistryEntry(
-          name: sa.name ?? '', desc: sa.desc ?? '',
-          category: 'special_ability', challengeRating: cr, monsterName: monsterName,
-        ));
+        newRegistryEntries.add(
+          AbilityRegistryEntry(
+            name: sa.name ?? '',
+            desc: sa.desc ?? '',
+            category: 'special_ability',
+            challengeRating: cr,
+            monsterName: monsterName,
+          ),
+        );
       }
 
       // Envía las nuevas entradas al servicio con deduplicación.
       if (newRegistryEntries.isNotEmpty) {
-        await MonsterAbilityRegistryService().addEntriesFromMonster(newRegistryEntries);
+        await MonsterAbilityRegistryService().addEntriesFromMonster(
+          newRegistryEntries,
+        );
         // Recarga las entradas para que las sugerencias estén actualizadas.
         _loadRegistryEntries();
       }
@@ -479,6 +503,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(
           widget.isEditing
               ? 'Editar: ${widget.baseMonster?.name}'
@@ -488,408 +513,415 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
         ),
         actions: [
           TextButton.icon(
-            onPressed: _importJson,
-            icon: const Icon(Icons.code, color: Colors.white),
+            onPressed: _showRandomGeneratorDialog,
+            icon: const Icon(Icons.auto_awesome, color: Colors.white),
             label: const Text(
-              "IMPORTAR JSON",
+              "Aleatorio",
               style: TextStyle(color: Colors.white),
             ),
           ),
+          IconButton(
+            icon: const Icon(Icons.code, color: Colors.white),
+            tooltip: "Importar Json",
+            onPressed: _importJson,
+          ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              const Text(
-                "Imagen",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Colors.brown,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              children: [
+                const Text(
+                  "Imagen",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.brown,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              _buildImagePreview(),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _imageController,
-                      decoration: const InputDecoration(
-                        labelText: 'URL de imagen o ruta local',
-                      ),
-                      onChanged: (val) => setState(() {}),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton.icon(
-                    onPressed: _pickImage,
-                    icon: const Icon(Icons.photo_library),
-                    label: const Text("GALERÍA"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.brown[400],
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-              const Divider(height: 30),
-
-              const Text(
-                "Datos Básicos",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Colors.brown,
-                ),
-              ),
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Nombre'),
-                validator: (value) => value == null || value.isEmpty
-                    ? 'El nombre es obligatorio'
-                    : null,
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: _selectedSize,
-                      decoration: const InputDecoration(labelText: "Tamaño"),
-                      items: _sizes
-                          .map(
-                            (s) => DropdownMenuItem(value: s, child: Text(s)),
-                          )
-                          .toList(),
-                      onChanged: (val) => setState(() => _selectedSize = val!),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: _selectedType,
-                      decoration: const InputDecoration(labelText: "Tipo"),
-                      items: _types
-                          .map(
-                            (t) => DropdownMenuItem(value: t, child: Text(t)),
-                          )
-                          .toList(),
-                      onChanged: (val) => setState(() => _selectedType = val!),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                "Alineamiento",
-                style: TextStyle(fontSize: 14, color: Colors.grey),
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: _selectedAlign1,
-                      items: _alignPart1
-                          .map(
-                            (a) => DropdownMenuItem(value: a, child: Text(a)),
-                          )
-                          .toList(),
-                      onChanged: (val) =>
-                          setState(() => _selectedAlign1 = val!),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: _selectedAlign2,
-                      items: _alignPart2
-                          .map(
-                            (a) => DropdownMenuItem(value: a, child: Text(a)),
-                          )
-                          .toList(),
-                      onChanged: _selectedAlign1 == "unaligned"
-                          ? null
-                          : (val) => setState(() => _selectedAlign2 = val!),
-                    ),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 1,
-                    child: TextFormField(
-                      controller: _hpController,
-                      decoration: const InputDecoration(labelText: 'HP'),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 1,
-                    child: TextFormField(
-                      controller: _acController,
-                      decoration: const InputDecoration(
-                        labelText: 'AC (Valor)',
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 2,
-                    child: TextFormField(
-                      controller: _acTypeController,
-                      decoration: const InputDecoration(
-                        labelText: 'Tipo de AC (ej: natural, armor)',
+                const SizedBox(height: 10),
+                _buildImagePreview(),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _imageController,
+                        decoration: const InputDecoration(
+                          labelText: 'URL de imagen o ruta local',
+                        ),
+                        onChanged: (val) => setState(() {}),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _hitDiceController,
-                      decoration: const InputDecoration(labelText: 'Hit Dice'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _hpRollController,
-                      decoration: const InputDecoration(labelText: 'HP Roll'),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 20),
-              const Text(
-                "Velocidad",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Colors.brown,
-                ),
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _walkSpeedController,
-                      decoration: const InputDecoration(labelText: 'Walk'),
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _flySpeedController,
-                      decoration: const InputDecoration(labelText: 'Fly'),
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _swimSpeedController,
-                      decoration: const InputDecoration(labelText: 'Swim'),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 20),
-              const Text(
-                "Atributos",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Colors.brown,
-                ),
-              ),
-              _buildStatSelector(
-                "Fuerza (STR)",
-                _str,
-                (val) => setState(() => _str = val),
-              ),
-              _buildStatSelector(
-                "Destreza (DEX)",
-                _dex,
-                (val) => setState(() => _dex = val),
-              ),
-              _buildStatSelector(
-                "Constitución (CON)",
-                _con,
-                (val) => setState(() => _con = val),
-              ),
-              _buildStatSelector(
-                "Inteligencia (INT)",
-                _int,
-                (val) => setState(() => _int = val),
-              ),
-              _buildStatSelector(
-                "Sabiduría (WIS)",
-                _wis,
-                (val) => setState(() => _wis = val),
-              ),
-              _buildStatSelector(
-                "Carisma (CHA)",
-                _cha,
-                (val) => setState(() => _cha = val),
-              ),
-
-              const SizedBox(height: 20),
-              const Text(
-                "Desafío y XP",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Colors.brown,
-                ),
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _crController,
-                      decoration: const InputDecoration(labelText: 'CR'),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _xpController,
-                      decoration: const InputDecoration(labelText: 'XP'),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _pbController,
-                      decoration: const InputDecoration(
-                        labelText: 'Prof. Bonus',
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      onPressed: _pickImage,
+                      icon: const Icon(Icons.photo_library),
+                      label: const Text("GALERÍA"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.brown[400],
+                        foregroundColor: Colors.white,
                       ),
-                      keyboardType: TextInputType.number,
+                    ),
+                  ],
+                ),
+                const Divider(height: 30),
+
+                const Text(
+                  "Datos Básicos",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.brown,
+                  ),
+                ),
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(labelText: 'Nombre'),
+                  validator: (value) => value == null || value.isEmpty
+                      ? 'El nombre es obligatorio'
+                      : null,
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedSize,
+                        decoration: const InputDecoration(labelText: "Tamaño"),
+                        items: _sizes
+                            .map(
+                              (s) => DropdownMenuItem(value: s, child: Text(s)),
+                            )
+                            .toList(),
+                        onChanged: (val) => setState(() => _selectedSize = val!),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedType,
+                        decoration: const InputDecoration(labelText: "Tipo"),
+                        items: _types
+                            .map(
+                              (t) => DropdownMenuItem(value: t, child: Text(t)),
+                            )
+                            .toList(),
+                        onChanged: (val) => setState(() => _selectedType = val!),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  "Alineamiento",
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedAlign1,
+                        items: _alignPart1
+                            .map(
+                              (a) => DropdownMenuItem(value: a, child: Text(a)),
+                            )
+                            .toList(),
+                        onChanged: (val) =>
+                            setState(() => _selectedAlign1 = val!),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedAlign2,
+                        items: _alignPart2
+                            .map(
+                              (a) => DropdownMenuItem(value: a, child: Text(a)),
+                            )
+                            .toList(),
+                        onChanged: _selectedAlign1 == "unaligned"
+                            ? null
+                            : (val) => setState(() => _selectedAlign2 = val!),
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: TextFormField(
+                        controller: _hpController,
+                        decoration: const InputDecoration(labelText: 'HP'),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      flex: 1,
+                      child: TextFormField(
+                        controller: _acController,
+                        decoration: const InputDecoration(
+                          labelText: 'AC (Valor)',
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      flex: 2,
+                      child: TextFormField(
+                        controller: _acTypeController,
+                        decoration: const InputDecoration(
+                          labelText: 'Tipo de AC (ej: natural, armor)',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _hitDiceController,
+                        decoration: const InputDecoration(labelText: 'Hit Dice'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _hpRollController,
+                        decoration: const InputDecoration(labelText: 'HP Roll'),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+                const Text(
+                  "Velocidad",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.brown,
+                  ),
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _walkSpeedController,
+                        decoration: const InputDecoration(labelText: 'Walk'),
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _flySpeedController,
+                        decoration: const InputDecoration(labelText: 'Fly'),
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _swimSpeedController,
+                        decoration: const InputDecoration(labelText: 'Swim'),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+                const Text(
+                  "Atributos",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.brown,
+                  ),
+                ),
+                _buildStatSelector(
+                  "Fuerza (STR)",
+                  _str,
+                  (val) => setState(() => _str = val),
+                ),
+                _buildStatSelector(
+                  "Destreza (DEX)",
+                  _dex,
+                  (val) => setState(() => _dex = val),
+                ),
+                _buildStatSelector(
+                  "Constitución (CON)",
+                  _con,
+                  (val) => setState(() => _con = val),
+                ),
+                _buildStatSelector(
+                  "Inteligencia (INT)",
+                  _int,
+                  (val) => setState(() => _int = val),
+                ),
+                _buildStatSelector(
+                  "Sabiduría (WIS)",
+                  _wis,
+                  (val) => setState(() => _wis = val),
+                ),
+                _buildStatSelector(
+                  "Carisma (CHA)",
+                  _cha,
+                  (val) => setState(() => _cha = val),
+                ),
+
+                const SizedBox(height: 20),
+                const Text(
+                  "Desafío y XP",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.brown,
+                  ),
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _crController,
+                        decoration: const InputDecoration(labelText: 'CR'),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _xpController,
+                        decoration: const InputDecoration(labelText: 'XP'),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _pbController,
+                        decoration: const InputDecoration(
+                          labelText: 'Prof. Bonus',
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+                const Text(
+                  "Sentidos",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.brown,
+                  ),
+                ),
+                TextFormField(
+                  controller: _blindsightController,
+                  decoration: const InputDecoration(labelText: 'Blindsight'),
+                ),
+                TextFormField(
+                  controller: _darkvisionController,
+                  decoration: const InputDecoration(labelText: 'Darkvision'),
+                ),
+                TextFormField(
+                  controller: _tremorsenseController,
+                  decoration: const InputDecoration(labelText: 'Tremorsense'),
+                ),
+                TextFormField(
+                  controller: _truesightController,
+                  decoration: const InputDecoration(labelText: 'Truesight'),
+                ),
+                TextFormField(
+                  controller: _passivePerceptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Passive Perception',
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+
+                const SizedBox(height: 20),
+                const Text(
+                  "Otros",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.brown,
+                  ),
+                ),
+                TextFormField(
+                  controller: _languagesController,
+                  decoration: const InputDecoration(labelText: 'Idiomas'),
+                ),
+                TextFormField(
+                  controller: _vulnerabilitiesController,
+                  decoration: const InputDecoration(
+                    labelText: 'Vulnerabilidades',
+                  ),
+                ),
+                TextFormField(
+                  controller: _resistancesController,
+                  decoration: const InputDecoration(labelText: 'Resistencias'),
+                ),
+                TextFormField(
+                  controller: _immunitiesController,
+                  decoration: const InputDecoration(labelText: 'Inmunidades'),
+                ),
+
+                const SizedBox(height: 20),
+                // Editores para elementos de lista dinámicos.
+                // Editores con autocompletado del registro, categorizados.
+                _buildComplexListEditor<SpecialAbility>(
+                  "Habilidades Especiales",
+                  _specialAbilities,
+                  (name, desc) => SpecialAbility(name: name, desc: desc),
+                  'special_ability', // Categoría del registro.
+                ),
+                const SizedBox(height: 20),
+                _buildComplexListEditor<MonsterAction>(
+                  "Acciones",
+                  _actions,
+                  (name, desc) => MonsterAction(name: name, desc: desc),
+                  'action', // Categoría del registro.
+                ),
+                const SizedBox(height: 20),
+                _buildComplexListEditor<LegendaryAction>(
+                  "Acciones Legendarias",
+                  _legendaryActions,
+                  (name, desc) => LegendaryAction(name: name, desc: desc),
+                  'legendary_action', // Categoría del registro.
+                ),
+                const SizedBox(height: 20),
+                _buildComplexListEditor<MonsterReaction>(
+                  "Reacciones",
+                  _reactions,
+                  (name, desc) => MonsterReaction(name: name, desc: desc),
+                  'reaction', // Categoría del registro.
+                ),
+
+                const SizedBox(height: 30),
+                ElevatedButton.icon(
+                  onPressed: _saveMonster,
+                  icon: const Icon(Icons.save),
+                  label: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12.0),
+                    child: Text(
+                      'GUARDAR CRIATURA',
+                      style: TextStyle(fontSize: 16),
                     ),
                   ),
-                ],
-              ),
-
-              const SizedBox(height: 20),
-              const Text(
-                "Sentidos",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Colors.brown,
-                ),
-              ),
-              TextFormField(
-                controller: _blindsightController,
-                decoration: const InputDecoration(labelText: 'Blindsight'),
-              ),
-              TextFormField(
-                controller: _darkvisionController,
-                decoration: const InputDecoration(labelText: 'Darkvision'),
-              ),
-              TextFormField(
-                controller: _tremorsenseController,
-                decoration: const InputDecoration(labelText: 'Tremorsense'),
-              ),
-              TextFormField(
-                controller: _truesightController,
-                decoration: const InputDecoration(labelText: 'Truesight'),
-              ),
-              TextFormField(
-                controller: _passivePerceptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Passive Perception',
-                ),
-                keyboardType: TextInputType.number,
-              ),
-
-              const SizedBox(height: 20),
-              const Text(
-                "Otros",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Colors.brown,
-                ),
-              ),
-              TextFormField(
-                controller: _languagesController,
-                decoration: const InputDecoration(labelText: 'Idiomas'),
-              ),
-              TextFormField(
-                controller: _vulnerabilitiesController,
-                decoration: const InputDecoration(
-                  labelText: 'Vulnerabilidades',
-                ),
-              ),
-              TextFormField(
-                controller: _resistancesController,
-                decoration: const InputDecoration(labelText: 'Resistencias'),
-              ),
-              TextFormField(
-                controller: _immunitiesController,
-                decoration: const InputDecoration(labelText: 'Inmunidades'),
-              ),
-
-              const SizedBox(height: 20),
-              // Editores para elementos de lista dinámicos.
-              // Editores con autocompletado del registro, categorizados.
-              _buildComplexListEditor<SpecialAbility>(
-                "Habilidades Especiales",
-                _specialAbilities,
-                (name, desc) => SpecialAbility(name: name, desc: desc),
-                'special_ability', // Categoría del registro.
-              ),
-              const SizedBox(height: 20),
-              _buildComplexListEditor<MonsterAction>(
-                "Acciones",
-                _actions,
-                (name, desc) => MonsterAction(name: name, desc: desc),
-                'action', // Categoría del registro.
-              ),
-              const SizedBox(height: 20),
-              _buildComplexListEditor<LegendaryAction>(
-                "Acciones Legendarias",
-                _legendaryActions,
-                (name, desc) => LegendaryAction(name: name, desc: desc),
-                'legendary_action', // Categoría del registro.
-              ),
-              const SizedBox(height: 20),
-              _buildComplexListEditor<MonsterReaction>(
-                "Reacciones",
-                _reactions,
-                (name, desc) => MonsterReaction(name: name, desc: desc),
-                'reaction', // Categoría del registro.
-              ),
-
-              const SizedBox(height: 30),
-              ElevatedButton.icon(
-                onPressed: _saveMonster,
-                icon: const Icon(Icons.save),
-                label: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12.0),
-                  child: Text(
-                    'GUARDAR CRIATURA',
-                    style: TextStyle(fontSize: 16),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.brown[600],
+                    foregroundColor: Colors.white,
                   ),
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.brown[600],
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -898,11 +930,12 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
 
   /// Construye la previsualización de la imagen cargada (Network, File o API).
   Widget _buildImagePreview() {
-    if (_imageFile != null)
+    if (_imageFile != null) {
       return Center(
         child: Image.file(_imageFile!, height: 150, fit: BoxFit.contain),
       );
-    if (_imageController.text.startsWith('http'))
+    }
+    if (_imageController.text.startsWith('http')) {
       return Center(
         child: Image.network(
           _imageController.text,
@@ -912,7 +945,8 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
               const Icon(Icons.broken_image, size: 80),
         ),
       );
-    if (_imageController.text.startsWith('/api'))
+    }
+    if (_imageController.text.startsWith('/api')) {
       return Center(
         child: Image.network(
           "https://www.dnd5eapi.co${_imageController.text}",
@@ -922,6 +956,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
               const Icon(Icons.broken_image, size: 80),
         ),
       );
+    }
     return Container(
       height: 100,
       color: Colors.grey[200],
@@ -1084,11 +1119,13 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                       return const Iterable<AbilityRegistryEntry>.empty();
                     }
                     // Filtra sugerencias que contengan el texto escrito.
-                    return suggestions.where(
-                      (entry) => entry.name.toLowerCase().contains(
-                        textEditingValue.text.toLowerCase(),
-                      ),
-                    ).take(8); // Máximo 8 sugerencias para no saturar.
+                    return suggestions
+                        .where(
+                          (entry) => entry.name.toLowerCase().contains(
+                            textEditingValue.text.toLowerCase(),
+                          ),
+                        )
+                        .take(8); // Máximo 8 sugerencias para no saturar.
                   },
                   // Texto mostrado en el campo al seleccionar una opción.
                   displayStringForOption: (entry) => entry.name,
@@ -1096,18 +1133,19 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                     // Al seleccionar, auto-rellena la descripción.
                     descCol.text = entry.desc;
                   },
-                  fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-                    // Captura la referencia al controller para leer el texto al guardar.
-                    nameFieldController = controller;
-                    return TextField(
-                      controller: controller,
-                      focusNode: focusNode,
-                      decoration: const InputDecoration(
-                        labelText: "Nombre",
-                        hintText: "Escribe para ver sugerencias...",
-                      ),
-                    );
-                  },
+                  fieldViewBuilder:
+                      (context, controller, focusNode, onFieldSubmitted) {
+                        // Captura la referencia al controller para leer el texto al guardar.
+                        nameFieldController = controller;
+                        return TextField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          decoration: const InputDecoration(
+                            labelText: "Nombre",
+                            hintText: "Escribe para ver sugerencias...",
+                          ),
+                        );
+                      },
                   // Personaliza la apariencia de la lista de sugerencias.
                   optionsViewBuilder: (context, onSelected, options) {
                     return Align(
@@ -1180,5 +1218,251 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
         ],
       ),
     );
+  }
+
+  /// Muestra un diálogo modal que permite al usuario configurar y generar
+  /// una criatura de forma aleatoria basada en un Challenge Rating (CR) objetivo.
+  ///
+  /// El usuario puede seleccionar el CR y la cantidad deseada de:
+  /// - Habilidades especiales
+  /// - Acciones
+  /// - Acciones legendarias
+  /// - Reacciones
+  void _showRandomGeneratorDialog() {
+    if (_registryEntries.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Registro Vacío"),
+          content: const Text(
+            "No hay habilidades guardadas en el registro local. "
+            "Es necesario consultar criaturas del bestiario (API) para "
+            "llenar el registro antes de poder generar una criatura aleatoria.",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancelar"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context); // Cierra este diálogo
+                Navigator.pushNamed(context, '/api'); // Navega a la API
+              },
+              child: const Text("Ir a la API"),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    num selectedCr = 1;
+    int numSpecialAbilities = 0;
+    int numActions = 2;
+    int numLegendaryActions = 0;
+    int numReactions = 0;
+
+    // Lista de opciones de CR disponibles en D&D 5e (incluyendo fracciones)
+    final crOptions = [0, 0.125, 0.25, 0.5, ...List.generate(30, (i) => i + 1)];
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text("Generador Aleatorio"),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DropdownButtonFormField<num>(
+                      value: selectedCr,
+                      decoration: const InputDecoration(
+                        labelText: "CR Objetivo",
+                      ),
+                      items: crOptions.map((cr) {
+                        String label = cr.toString();
+                        if (cr == 0.125) label = "1/8";
+                        if (cr == 0.25) label = "1/4";
+                        if (cr == 0.5) label = "1/2";
+                        return DropdownMenuItem<num>(
+                          value: cr,
+                          child: Text(label),
+                        );
+                      }).toList(),
+                      onChanged: (val) =>
+                          setStateDialog(() => selectedCr = val!),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            "Habilidades Especiales: $numSpecialAbilities",
+                          ),
+                        ),
+                        Slider(
+                          value: numSpecialAbilities.toDouble(),
+                          min: 0,
+                          max: 5,
+                          divisions: 5,
+                          onChanged: (val) => setStateDialog(
+                            () => numSpecialAbilities = val.toInt(),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Expanded(child: Text("Acciones: $numActions")),
+                        Slider(
+                          value: numActions.toDouble(),
+                          min: 0,
+                          max: 5,
+                          divisions: 5,
+                          onChanged: (val) =>
+                              setStateDialog(() => numActions = val.toInt()),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            "Acciones Legendarias: $numLegendaryActions",
+                          ),
+                        ),
+                        Slider(
+                          value: numLegendaryActions.toDouble(),
+                          min: 0,
+                          max: 5,
+                          divisions: 5,
+                          onChanged: (val) => setStateDialog(
+                            () => numLegendaryActions = val.toInt(),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Expanded(child: Text("Reacciones: $numReactions")),
+                        Slider(
+                          value: numReactions.toDouble(),
+                          min: 0,
+                          max: 5,
+                          divisions: 5,
+                          onChanged: (val) =>
+                              setStateDialog(() => numReactions = val.toInt()),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Cancelar"),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _generateRandomMonster(
+                      selectedCr,
+                      numSpecialAbilities,
+                      numActions,
+                      numLegendaryActions,
+                      numReactions,
+                    );
+                  },
+                  child: const Text("Generar"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// Genera aleatoriamente las estadísticas y habilidades de una criatura
+  /// basándose en los parámetros seleccionados en el diálogo.
+  ///
+  /// [cr] El Challenge Rating objetivo que determinará los atributos base.
+  /// [numSpecialAbilities] Cantidad de habilidades especiales a generar.
+  /// [numActions] Cantidad de acciones de combate a generar.
+  /// [numLegendaryActions] Cantidad de acciones legendarias a generar.
+  /// [numReactions] Cantidad de reacciones a generar.
+  void _generateRandomMonster(
+    num cr,
+    int numSpecialAbilities,
+    int numActions,
+    int numLegendaryActions,
+    int numReactions,
+  ) {
+    final monster = MonsterRandomizerService.generateRandomMonster(
+      targetCr: cr,
+      numSpecialAbilities: numSpecialAbilities,
+      numActions: numActions,
+      numLegendaryActions: numLegendaryActions,
+      numReactions: numReactions,
+      registryEntries: _registryEntries,
+    );
+
+    setState(() {
+      _nameController.text = monster.name ?? "";
+      _selectedSize = monster.size ?? _selectedSize;
+      _selectedType = monster.type ?? _selectedType;
+
+      String fullAlign = monster.alignment ?? "unaligned";
+      if (fullAlign == "unaligned") {
+        _selectedAlign1 = "unaligned";
+        _selectedAlign2 = "neutral";
+      } else {
+        final parts = fullAlign.split(" ");
+        if (parts.isNotEmpty) _selectedAlign1 = parts[0];
+        if (parts.length > 1) _selectedAlign2 = parts[1];
+      }
+
+      _crController.text = monster.challengeRating?.toString() ?? "";
+      _pbController.text = monster.proficiencyBonus?.toString() ?? "";
+      if (monster.armorClass != null && monster.armorClass!.isNotEmpty) {
+        _acController.text = monster.armorClass!.first.value?.toString() ?? "";
+      }
+      _xpController.text = monster.xp?.toString() ?? "";
+
+      _hpController.text = monster.hitPoints?.toString() ?? "";
+      _hitDiceController.text = monster.hitDice ?? "";
+      _hpRollController.text = monster.hitPointsRoll ?? "";
+
+      _str = monster.strength ?? 10;
+      _dex = monster.dexterity ?? 10;
+      _con = monster.constitution ?? 10;
+      _int = monster.intelligence ?? 10;
+      _wis = monster.wisdom ?? 10;
+      _cha = monster.charisma ?? 10;
+
+      _walkSpeedController.text = monster.speed?.walk ?? "";
+      _flySpeedController.text = monster.speed?.fly ?? "";
+      _swimSpeedController.text = monster.speed?.swim ?? "";
+
+      _passivePerceptionController.text =
+          monster.senses?.passivePerception?.toString() ?? "";
+      _blindsightController.text = monster.senses?.blindsight ?? "";
+      _darkvisionController.text = monster.senses?.darkvision ?? "";
+      _tremorsenseController.text = monster.senses?.tremorsense ?? "";
+      _truesightController.text = monster.senses?.truesight ?? "";
+
+      _specialAbilities = List.from(monster.specialAbilities ?? []);
+      _actions = List.from(monster.actions ?? []);
+      _legendaryActions = List.from(monster.legendaryActions ?? []);
+      _reactions = List.from(monster.reactions ?? []);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Generada criatura aleatoria CR $cr')),
+      );
+    });
   }
 }

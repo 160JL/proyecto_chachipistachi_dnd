@@ -90,6 +90,7 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.monsterName),
         actions: [
           if (_currentMonster != null) ...[
@@ -150,208 +151,210 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
           ],
         ],
       ),
-      body: FutureBuilder<Monster>(
-        future: futureMonster,
-        builder: (context, snapshot) {
-          // Indicador de carga central mientras se obtienen los datos.
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          // Manejo de errores en la obtención de detalles.
-          else if (snapshot.hasError) {
-            print('Error cargando detalles: ${snapshot.error}');
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-          // Si tenemos los datos del monstruo, construimos la interfaz.
-          else if (snapshot.hasData) {
-            final monster = snapshot.data!;
-            // Actualizamos el monstruo actual para el botón de la AppBar.
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted && _currentMonster == null) {
-                setState(() {
-                  _currentMonster = monster;
-                });
-              }
-            });
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Imagen principal de la criatura.
-                  Center(child: _buildMonsterImage(monster.image)),
-                  const SizedBox(height: 16),
+      body: SafeArea(
+        child: FutureBuilder<Monster>(
+          future: futureMonster,
+          builder: (context, snapshot) {
+            // Indicador de carga central mientras se obtienen los datos.
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            // Manejo de errores en la obtención de detalles.
+            else if (snapshot.hasError) {
+              print('Error cargando detalles: ${snapshot.error}');
+              return Center(child: Text('Error: ${snapshot.error}'));
+            }
+            // Si tenemos los datos del monstruo, construimos la interfaz.
+            else if (snapshot.hasData) {
+              final monster = snapshot.data!;
+              // Actualizamos el monstruo actual para el botón de la AppBar.
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted && _currentMonster == null) {
+                  setState(() {
+                    _currentMonster = monster;
+                  });
+                }
+              });
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Imagen principal de la criatura.
+                    Center(child: _buildMonsterImage(monster.image)),
+                    const SizedBox(height: 16),
 
-                  // Encabezado: Nombre y Descripción básica (Tamaño, Tipo, Alineamiento).
-                  Text(
-                    monster.name ?? "Sin nombre",
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: Colors.red[900],
-                      fontWeight: FontWeight.bold,
+                    // Encabezado: Nombre y Descripción básica (Tamaño, Tipo, Alineamiento).
+                    Text(
+                      monster.name ?? "Sin nombre",
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        color: Colors.red[900],
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  Text(
-                    "${monster.size} ${monster.type}, ${monster.alignment}",
-                    style: const TextStyle(
-                      fontStyle: FontStyle.italic,
-                      fontSize: 16,
+                    Text(
+                      "${monster.size} ${monster.type}, ${monster.alignment}",
+                      style: const TextStyle(
+                        fontStyle: FontStyle.italic,
+                        fontSize: 16,
+                      ),
                     ),
-                  ),
-                  const Divider(thickness: 2, color: Colors.brown),
+                    const Divider(thickness: 2, color: Colors.brown),
 
-                  // Sección de Estadísticas Básicas.
-                  _buildDetailRow(
-                    "Clase de Armadura",
-                    _formatArmorClass(monster.armorClass),
-                  ),
-                  _buildDetailRow(
-                    "Puntos de Vida",
-                    "${monster.hitPoints} (${monster.hitDice})",
-                  ),
-                  _buildDetailRow("Velocidad", _formatSpeed(monster.speed)),
-                  const Divider(),
+                    // Sección de Estadísticas Básicas.
+                    _buildDetailRow(
+                      "Clase de Armadura",
+                      _formatArmorClass(monster.armorClass),
+                    ),
+                    _buildDetailRow(
+                      "Puntos de Vida",
+                      "${monster.hitPoints} (${monster.hitDice})",
+                    ),
+                    _buildDetailRow("Velocidad", _formatSpeed(monster.speed)),
+                    const Divider(),
 
-                  // Bloque de Atributos principales con sus modificadores calculados.
-                  const Text(
-                    "Atributos",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildStat("STR", monster.strength),
-                      _buildStat("DEX", monster.dexterity),
-                      _buildStat("CON", monster.constitution),
-                      _buildStat("INT", monster.intelligence),
-                      _buildStat("WIS", monster.wisdom),
-                      _buildStat("CHA", monster.charisma),
+                    // Bloque de Atributos principales con sus modificadores calculados.
+                    const Text(
+                      "Atributos",
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildStat("STR", monster.strength),
+                        _buildStat("DEX", monster.dexterity),
+                        _buildStat("CON", monster.constitution),
+                        _buildStat("INT", monster.intelligence),
+                        _buildStat("WIS", monster.wisdom),
+                        _buildStat("CHA", monster.charisma),
+                      ],
+                    ),
+                    const Divider(),
+
+                    // Competencias (Saving Throws y Skills).
+                    if (monster.proficiencies != null &&
+                        monster.proficiencies!.isNotEmpty)
+                      _buildSection(
+                        "Competencias",
+                        _formatProficiencies(monster.proficiencies),
+                      ),
+
+                    // Listado de Resistencias, Vulnerabilidades e Inmunidades.
+                    if (monster.damageVulnerabilities?.isNotEmpty ?? false)
+                      _buildSection(
+                        "Vulnerabilidades al Daño",
+                        monster.damageVulnerabilities!.join(", "),
+                      ),
+                    if (monster.damageResistances?.isNotEmpty ?? false)
+                      _buildSection(
+                        "Resistencias al Daño",
+                        monster.damageResistances!.join(", "),
+                      ),
+                    if (monster.damageImmunities?.isNotEmpty ?? false)
+                      _buildSection(
+                        "Inmunidades al Daño",
+                        monster.damageImmunities!.join(", "),
+                      ),
+                    if (monster.conditionImmunities?.isNotEmpty ?? false)
+                      _buildSection(
+                        "Inmunidades a Condición",
+                        monster.conditionImmunities!
+                            .map((e) => e.name)
+                            .join(", "),
+                      ),
+
+                    // Otros datos de interés: Sentidos, Idiomas y Desafío (CR).
+                    _buildSection("Sentidos", _formatSenses(monster.senses)),
+                    _buildSection("Idiomas", monster.languages ?? "Ninguno"),
+                    _buildSection(
+                      "Desafío",
+                      "${monster.challengeRating} (${monster.xp} XP)",
+                    ),
+                    const Divider(thickness: 2, color: Colors.brown),
+
+                    // Listado de Habilidades Especiales (Pasivas).
+                    if (monster.specialAbilities != null &&
+                        monster.specialAbilities!.isNotEmpty) ...[
+                      const Text(
+                        "Habilidades Especiales",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                          color: Colors.brown,
+                        ),
+                      ),
+                      ...monster.specialAbilities!.map(
+                        (ability) => _buildActionItem(ability.name, ability.desc),
+                      ),
                     ],
-                  ),
-                  const Divider(),
 
-                  // Competencias (Saving Throws y Skills).
-                  if (monster.proficiencies != null &&
-                      monster.proficiencies!.isNotEmpty)
-                    _buildSection(
-                      "Competencias",
-                      _formatProficiencies(monster.proficiencies),
-                    ),
-
-                  // Listado de Resistencias, Vulnerabilidades e Inmunidades.
-                  if (monster.damageVulnerabilities?.isNotEmpty ?? false)
-                    _buildSection(
-                      "Vulnerabilidades al Daño",
-                      monster.damageVulnerabilities!.join(", "),
-                    ),
-                  if (monster.damageResistances?.isNotEmpty ?? false)
-                    _buildSection(
-                      "Resistencias al Daño",
-                      monster.damageResistances!.join(", "),
-                    ),
-                  if (monster.damageImmunities?.isNotEmpty ?? false)
-                    _buildSection(
-                      "Inmunidades al Daño",
-                      monster.damageImmunities!.join(", "),
-                    ),
-                  if (monster.conditionImmunities?.isNotEmpty ?? false)
-                    _buildSection(
-                      "Inmunidades a Condición",
-                      monster.conditionImmunities!
-                          .map((e) => e.name)
-                          .join(", "),
-                    ),
-
-                  // Otros datos de interés: Sentidos, Idiomas y Desafío (CR).
-                  _buildSection("Sentidos", _formatSenses(monster.senses)),
-                  _buildSection("Idiomas", monster.languages ?? "Ninguno"),
-                  _buildSection(
-                    "Desafío",
-                    "${monster.challengeRating} (${monster.xp} XP)",
-                  ),
-                  const Divider(thickness: 2, color: Colors.brown),
-
-                  // Listado de Habilidades Especiales (Pasivas).
-                  if (monster.specialAbilities != null &&
-                      monster.specialAbilities!.isNotEmpty) ...[
-                    const Text(
-                      "Habilidades Especiales",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                        color: Colors.brown,
+                    // Listado de Acciones de combate.
+                    if (monster.actions != null &&
+                        monster.actions!.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      const Text(
+                        "Acciones",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                          color: Colors.brown,
+                        ),
                       ),
-                    ),
-                    ...monster.specialAbilities!.map(
-                      (ability) => _buildActionItem(ability.name, ability.desc),
-                    ),
+                      ...monster.actions!.map(
+                        (action) => _buildActionItem(action.name, action.desc),
+                      ),
+                    ],
+
+                    // Listado de Acciones Legendarias (si la criatura dispone de ellas).
+                    if (monster.legendaryActions != null &&
+                        monster.legendaryActions!.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      const Text(
+                        "Acciones Legendarias",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                          color: Colors.brown,
+                        ),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 8.0),
+                        child: Text(
+                          "La criatura puede realizar 3 acciones legendarias, eligiendo entre las opciones siguientes.",
+                        ),
+                      ),
+                      ...monster.legendaryActions!.map(
+                        (action) => _buildActionItem(action.name, action.desc),
+                      ),
+                    ],
+
+                    // Listado de Reacciones (si la criatura dispone de ellas).
+                    if (monster.reactions != null &&
+                        monster.reactions!.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      const Text(
+                        "Reacciones",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                          color: Colors.brown,
+                        ),
+                      ),
+                      ...monster.reactions!.map(
+                        (reaction) =>
+                            _buildActionItem(reaction.name, reaction.desc),
+                      ),
+                    ],
+                    const SizedBox(height: 32),
                   ],
-
-                  // Listado de Acciones de combate.
-                  if (monster.actions != null &&
-                      monster.actions!.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    const Text(
-                      "Acciones",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                        color: Colors.brown,
-                      ),
-                    ),
-                    ...monster.actions!.map(
-                      (action) => _buildActionItem(action.name, action.desc),
-                    ),
-                  ],
-
-                  // Listado de Acciones Legendarias (si la criatura dispone de ellas).
-                  if (monster.legendaryActions != null &&
-                      monster.legendaryActions!.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    const Text(
-                      "Acciones Legendarias",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                        color: Colors.brown,
-                      ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: 8.0),
-                      child: Text(
-                        "La criatura puede realizar 3 acciones legendarias, eligiendo entre las opciones siguientes.",
-                      ),
-                    ),
-                    ...monster.legendaryActions!.map(
-                      (action) => _buildActionItem(action.name, action.desc),
-                    ),
-                  ],
-
-                  // Listado de Reacciones (si la criatura dispone de ellas).
-                  if (monster.reactions != null &&
-                      monster.reactions!.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    const Text(
-                      "Reacciones",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                        color: Colors.brown,
-                      ),
-                    ),
-                    ...monster.reactions!.map(
-                      (reaction) =>
-                          _buildActionItem(reaction.name, reaction.desc),
-                    ),
-                  ],
-                  const SizedBox(height: 32),
-                ],
-              ),
-            );
-          }
-          // Caso por defecto: no hay datos.
-          return const Center(child: Text('No hay datos disponibles'));
-        },
+                ),
+              );
+            }
+            // Caso por defecto: no hay datos.
+            return const Center(child: Text('No hay datos disponibles'));
+          },
+        ),
       ),
     );
   }
