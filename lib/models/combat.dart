@@ -38,7 +38,9 @@ class Participant {
       initiative: json['initiative'],
       initiativeBonus: json['initiativeBonus'],
       isPlayer: json['isPlayer'],
-      monster: json['monster'] != null ? Monster.fromJson(json['monster']) : null,
+      monster: json['monster'] != null
+          ? Monster.fromJson(json['monster'])
+          : null,
     );
   }
 

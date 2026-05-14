@@ -40,15 +40,21 @@ class _CombatListScreenState extends State<CombatListScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const InitiativeTrackerScreen()),
-    ).then((_) => _loadSessions()); // Recargamos al volver por si se guardó el nuevo.
+    ).then(
+      (_) => _loadSessions(),
+    ); // Recargamos al volver por si se guardó el nuevo.
   }
 
   /// Abre un combate existente.
   void _openCombat(CombatSession session) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => InitiativeTrackerScreen(session: session)),
-    ).then((_) => _loadSessions()); // Recargamos al volver por posibles cambios.
+      MaterialPageRoute(
+        builder: (context) => InitiativeTrackerScreen(session: session),
+      ),
+    ).then(
+      (_) => _loadSessions(),
+    ); // Recargamos al volver por posibles cambios.
   }
 
   /// Elimina definitivamente una sesión de combate del almacenamiento.
@@ -67,8 +73,8 @@ class _CombatListScreenState extends State<CombatListScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _sessions.isEmpty
-              ? _buildEmptyState()
-              : _buildSessionList(),
+          ? _buildEmptyState()
+          : _buildSessionList(),
       floatingActionButton: FloatingActionButton(
         onPressed: _createNewCombat,
         tooltip: "Nuevo Combate",
@@ -108,8 +114,10 @@ class _CombatListScreenState extends State<CombatListScreen> {
       itemBuilder: (context, index) {
         final session = _sessions[index];
         // Formateo de fecha legible usando la librería 'intl'.
-        final dateStr = DateFormat('dd/MM/yyyy HH:mm').format(session.lastModified);
-        
+        final dateStr = DateFormat(
+          'dd/MM/yyyy HH:mm',
+        ).format(session.lastModified);
+
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
           child: ListTile(
@@ -146,9 +154,14 @@ class _CombatListScreenState extends State<CombatListScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Eliminar Combate"),
-        content: Text("¿Estás seguro de que quieres eliminar '${session.name}'?"),
+        content: Text(
+          "¿Estás seguro de que quieres eliminar '${session.name}'?",
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("CANCELAR")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("CANCELAR"),
+          ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
