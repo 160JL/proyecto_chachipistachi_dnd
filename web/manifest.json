@@ -1,11 +1,11 @@
 {
-    "name": "proyecto_chachipistachi_dnd",
-    "short_name": "proyecto_chachipistachi_dnd",
+    "name": "Compañero DnD",
+    "short_name": "Compañero DnD",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "Proyecto fin de curso, generador DnD",
+    "description": "Compañero DnD - Proyecto fin de curso",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

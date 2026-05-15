@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:proyecto_chachipistachi_dnd/models/changelog.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/battle_screen.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/monster_list_screen.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/monster_create_screen.dart';
@@ -26,7 +28,7 @@ class MyApp extends StatelessWidget {
     const goldOrange = Color(0xFFE69A28);
 
     return MaterialApp(
-      title: 'Generador DnD',
+      title: 'Compañero DnD',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
@@ -137,7 +139,21 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final String _title = "Generador DnD";
+  final String _title = "Compañero DnD";
+  String _version = "";
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final PackageInfo packageInfo = await PackageInfo.fromPlatform();
+    setState(() {
+      _version = packageInfo.version;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -146,45 +162,125 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(_title),
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Botones de acceso a las distintas secciones con etiquetas claras.
-              _buildMenuButton(
-                context,
-                "Simulación de batalla",
-                Icons.grid_on,
-                "/battlescreen",
+      body: Stack(
+        children: [
+          Center(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Botones de acceso a las distintas secciones con etiquetas claras.
+                  _buildMenuButton(
+                    context,
+                    "Simulación de batalla",
+                    Icons.grid_on,
+                    "/battlescreen",
+                  ),
+                  _buildMenuButton(
+                    context,
+                    "Iniciativa (Tracker)",
+                    Icons.list_alt,
+                    "/initiative",
+                  ),
+                  _buildMenuButton(
+                    context,
+                    "Crear Criatura Nueva",
+                    Icons.add_circle_outline,
+                    "/create",
+                  ),
+                  _buildMenuButton(
+                    context,
+                    "Consultar Bestiario (API)",
+                    Icons.public,
+                    "/api",
+                  ),
+                  _buildMenuButton(
+                    context,
+                    "Mis Criaturas Guardadas",
+                    Icons.storage,
+                    "/repository",
+                  ),
+                ],
               ),
-              _buildMenuButton(
-                context,
-                "Iniciativa (Tracker)",
-                Icons.list_alt,
-                "/initiative",
+            ),
+          ),
+          if (_version.isNotEmpty)
+            Positioned(
+              bottom: 12,
+              right: 16,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'v$_version',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: () => _showChangelog(context),
+                    borderRadius: BorderRadius.circular(20),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Icon(
+                        Icons.history,
+                        size: 20,
+                        color: Theme.of(context).colorScheme.primary.withAlpha(180),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              _buildMenuButton(
-                context,
-                "Crear Criatura Nueva",
-                Icons.add_circle_outline,
-                "/create",
-              ),
-              _buildMenuButton(
-                context,
-                "Consultar Bestiario (API)",
-                Icons.public,
-                "/api",
-              ),
-              _buildMenuButton(
-                context,
-                "Mis Criaturas Guardadas",
-                Icons.storage,
-                "/repository",
-              ),
-            ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _showChangelog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Registro de Cambios (Changelog)"),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: appChangelog.length,
+            itemBuilder: (context, index) {
+              final entry = appChangelog[index];
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Versión ${entry.version} (${entry.date})",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  ...entry.changes.map((change) => Padding(
+                    padding: const EdgeInsets.only(left: 8.0, bottom: 2.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("• "),
+                        Expanded(child: Text(change)),
+                      ],
+                    ),
+                  )),
+                  const Divider(),
+                ],
+              );
+            },
           ),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("CERRAR"),
+          ),
+        ],
       ),
     );
   }
@@ -194,12 +290,13 @@ class _MyHomePageState extends State<MyHomePage> {
     BuildContext context,
     String text,
     IconData icon,
-    String route,
-  ) {
+    String? route, {
+    VoidCallback? onTap,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: ElevatedButton.icon(
-        onPressed: () => Navigator.pushNamed(context, route),
+        onPressed: onTap ?? () => Navigator.pushNamed(context, route!),
         icon: Icon(icon),
         label: Text(text, style: const TextStyle(fontSize: 16)),
         style: ElevatedButton.styleFrom(

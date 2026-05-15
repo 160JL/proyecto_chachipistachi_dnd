@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+import 'dart:io' show File;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:convert';
 import 'dart:math';
 import '../models/monster.dart';
@@ -250,8 +251,12 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
     if (monster?.image != null &&
         !monster!.image!.startsWith('http') &&
         !monster.image!.startsWith('/api')) {
-      _imageFile = File(monster.image!);
-      if (!_imageFile!.existsSync()) _imageFile = null;
+      if (kIsWeb) {
+        _imageFile = null; // En web no usamos File de dart:io
+      } else {
+        _imageFile = File(monster.image!);
+        if (!_imageFile!.existsSync()) _imageFile = null;
+      }
     } else {
       _imageFile = null;
     }
@@ -290,7 +295,9 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
       setState(() {
-        _imageFile = File(image.path);
+        if (!kIsWeb) {
+          _imageFile = File(image.path);
+        }
         _imageController.text = image.path;
       });
     }
@@ -938,9 +945,21 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
 
   /// Construye la previsualización de la imagen cargada (Network, File o API).
   Widget _buildImagePreview() {
-    if (_imageFile != null) {
+    if (!kIsWeb && _imageFile != null) {
       return Center(
         child: Image.file(_imageFile!, height: 150, fit: BoxFit.contain),
+      );
+    }
+    // En web, las imágenes locales son Blob URLs que se manejan con Image.network
+    if (kIsWeb && _imageController.text.isNotEmpty && !_imageController.text.startsWith('http') && !_imageController.text.startsWith('/api')) {
+      return Center(
+        child: Image.network(
+          _imageController.text,
+          height: 150,
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) =>
+              const Icon(Icons.broken_image, size: 80),
+        ),
       );
     }
     if (_imageController.text.startsWith('http')) {

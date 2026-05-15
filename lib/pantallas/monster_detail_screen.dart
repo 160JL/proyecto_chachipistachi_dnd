@@ -1,7 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'dart:io';
+import 'dart:io' show File;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'package:proyecto_chachipistachi_dnd/models/monster.dart';
 import 'package:proyecto_chachipistachi_dnd/service/connection_service.dart';
@@ -92,6 +93,15 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
       );
     } else {
       // Asumimos que es una ruta de archivo local
+      if (kIsWeb) {
+        return Image.network(
+          imagePath,
+          height: 250,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) =>
+              const Icon(Icons.broken_image, size: 100),
+        );
+      }
       final file = File(imagePath);
       if (file.existsSync()) {
         return Image.file(
@@ -690,6 +700,11 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
   Future<void> _exportAsJson() async {
     try {
       final jsonStr = jsonEncode(_currentMonster!.toJson());
+
+      if (kIsWeb) {
+        _showJsonExportDialog(jsonStr);
+        return;
+      }
       
       // Intentamos abrir el selector de archivos para guardar
       // En móviles, saveFile requiere los bytes directamente
@@ -737,6 +752,45 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
     }
   }
 
+  void _showJsonExportDialog(String jsonStr) {
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Exportación JSON"),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  "Copia el contenido para guardarlo o usarlo en otro dispositivo:",
+                  style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
+                ),
+                const SizedBox(height: 10),
+                SelectableText(
+                  jsonStr,
+                  style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Share.share(jsonStr, subject: 'Estadísticas de ${_currentMonster!.name}');
+              },
+              child: const Text("COMPARTIR"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("CERRAR"),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   /// Captura la ficha visual y la exporta como imagen PNG.
   Future<void> _exportAsPng() async {
     try {
@@ -746,6 +800,16 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
       ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       final bytes = byteData!.buffer.asUint8List();
+
+      if (kIsWeb) {
+        final xFile = XFile.fromData(
+          bytes,
+          mimeType: 'image/png',
+          name: '${_currentMonster!.name}_ficha.png',
+        );
+        await Share.shareXFiles([xFile], text: 'Ficha de ${_currentMonster!.name}');
+        return;
+      }
 
       // Selector de archivos para guardar la imagen
       // Pasamos los bytes para compatibilidad con Android/iOS
