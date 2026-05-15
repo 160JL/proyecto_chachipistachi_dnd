@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/monster.dart';
 import '../models/monster_ability_registry.dart';
@@ -122,7 +123,7 @@ class MonsterAbilityRegistryService {
       } catch (e) {
         // Si falla la descarga de una criatura específica, la omitimos
         // y continuamos con las demás para no interrumpir el proceso completo.
-        print('Error al procesar criatura en $url: $e');
+        debugPrint('Error al procesar criatura en $url: $e');
       }
 
       // Notifica el progreso al callback (si fue proporcionado) para actualizar el UI.
@@ -149,7 +150,7 @@ class MonsterAbilityRegistryService {
     await prefs.setString(_registryDataKey, jsonData);
     await prefs.setBool(_registryBuiltKey, true);
 
-    print('Registro de habilidades construido: ${registry.length} entradas.');
+    debugPrint('Registro de habilidades construido: ${registry.length} entradas.');
   }
 
   /// Borra el registro actual de habilidades, forzando una reconstrucción la próxima vez.
@@ -194,7 +195,7 @@ class MonsterAbilityRegistryService {
     // Solo persistir si hubo cambios reales para evitar escrituras innecesarias.
     if (addedCount > 0) {
       await _saveRegistry(existing);
-      print('Registro actualizado: $addedCount entradas nuevas añadidas.');
+      debugPrint('Registro actualizado: $addedCount entradas nuevas añadidas.');
     }
   }
 

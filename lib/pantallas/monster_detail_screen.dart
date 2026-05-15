@@ -142,7 +142,7 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
             }
             // Manejo de errores en la obtención de detalles.
             else if (snapshot.hasError) {
-              print('Error cargando detalles: ${snapshot.error}');
+              debugPrint('Error cargando detalles: ${snapshot.error}');
               return Center(child: Text('Error: ${snapshot.error}'));
             }
             // Si tenemos los datos del monstruo, construimos la interfaz.
@@ -539,26 +539,6 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
     );
   }
 
-  /// Construye una línea de texto con título en negrita.
-  Widget _buildSection(String title, String content) {
-    return _buildStatBlockRow(title, content);
-  }
-
-  /// Alias de buildSection para filas de detalle simples.
-  Widget _buildDetailRow(String label, String value) {
-    return _buildStatBlockRow(label, value);
-  }
-
-  /// Construye el pequeño widget de cada atributo (ej: STR 20 (+5)).
-  Widget _buildStat(String label, int? value) {
-    return _buildAbilityScore(label, value);
-  }
-
-  /// Construye el bloque de texto para cada acción o habilidad.
-  Widget _buildActionItem(String? name, String? desc) {
-    return _buildStatBlockAbility(name, desc);
-  }
-
   // --- Funciones de Formateo de Datos ---
 
   /// Formatea la lista de Clases de Armadura.
@@ -587,23 +567,29 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
   String _formatSenses(Senses? senses) {
     if (senses == null) return "N/A";
     List<String> parts = [];
-    if (senses.blindsight != null)
+    if (senses.blindsight != null) {
       parts.add("Vista ciega ${senses.blindsight}");
-    if (senses.darkvision != null)
+    }
+    if (senses.darkvision != null) {
       parts.add("Visión en la oscuridad ${senses.darkvision}");
-    if (senses.tremorsense != null)
+    }
+    if (senses.tremorsense != null) {
       parts.add("Sentido de la vibración ${senses.tremorsense}");
-    if (senses.truesight != null)
+    }
+    if (senses.truesight != null) {
       parts.add("Visión verdadera ${senses.truesight}");
-    if (senses.passivePerception != null)
+    }
+    if (senses.passivePerception != null) {
       parts.add("Percepción pasiva ${senses.passivePerception}");
+    }
     return parts.isEmpty ? "N/A" : parts.join(", ");
   }
 
   /// Construye el menú lateral con las acciones de la criatura.
   Widget _buildActionDrawer() {
-    if (_currentMonster == null)
+    if (_currentMonster == null) {
       return const Drawer(child: Center(child: CircularProgressIndicator()));
+    }
 
     return Drawer(
       child: Column(
@@ -646,9 +632,9 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
               title: Text(
                 widget.monster != null ? "Editar Criatura" : "Usar como Base",
               ),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(context); // Cerrar drawer
-                Navigator.push(
+                final saved = await Navigator.push<bool>(
                   context,
                   MaterialPageRoute(
                     builder: (context) => MonsterCreateScreen(
@@ -657,9 +643,11 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
                       monsterIndex: widget.monsterIndex,
                     ),
                   ),
-                ).then((saved) {
-                  if (saved == true) Navigator.pop(context, true);
-                });
+                );
+
+                if (mounted && saved == true) {
+                  Navigator.pop(context, true);
+                }
               },
             ),
             const Divider(),

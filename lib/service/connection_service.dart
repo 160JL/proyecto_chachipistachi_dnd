@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'package:proyecto_chachipistachi_dnd/models/monster.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -59,7 +60,7 @@ class ConnectionService {
         (immunity != null && immunity != "Todos");
 
     if (hasAdvancedFilters) {
-      print('Aplicando filtrado local avanzado sobre resultados de la API');
+      debugPrint('Aplicando filtrado local avanzado sobre resultados de la API');
       final results = monsterList.results ?? [];
 
       // Descarga los detalles de todos los monstruos de la lista para poder filtrar por sus atributos internos.
@@ -85,7 +86,7 @@ class ConnectionService {
                 false);
 
         // Función auxiliar para comprobar múltiples valores en una lista (ej: varias inmunidades).
-        bool _matchMulti(String? filterValue, List<String>? monsterValues) {
+        bool matchMulti(String? filterValue, List<String>? monsterValues) {
           if (filterValue == null || filterValue == "Todos") return true;
           List<String> required = filterValue
               .split(',')
@@ -101,12 +102,12 @@ class ConnectionService {
           );
         }
 
-        bool matchVuln = _matchMulti(
+        bool matchVuln = matchMulti(
           vulnerability,
           detail.damageVulnerabilities,
         );
-        bool matchRes = _matchMulti(resistance, detail.damageResistances);
-        bool matchImm = _matchMulti(immunity, detail.damageImmunities);
+        bool matchRes = matchMulti(resistance, detail.damageResistances);
+        bool matchImm = matchMulti(immunity, detail.damageImmunities);
 
         if (matchType &&
             matchSize &&

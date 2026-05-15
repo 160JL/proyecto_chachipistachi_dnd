@@ -12,6 +12,13 @@ class ChangelogEntry {
 
 const List<ChangelogEntry> appChangelog = [
   ChangelogEntry(
+    version: "1.0.2",
+    date: "2026-05-15",
+    changes: [
+      "Resolución de Advertencias",
+    ],
+  ),
+  ChangelogEntry(
     version: "1.0.1",
     date: "2026-05-15",
     changes: [

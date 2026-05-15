@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:math';
 import 'package:provider/provider.dart';
 import 'package:proyecto_chachipistachi_dnd/models/monster.dart';
-import 'package:proyecto_chachipistachi_dnd/service/monster_storage_service.dart';
 import 'package:proyecto_chachipistachi_dnd/providers/battle_queue_provider.dart';
 
 import 'package:proyecto_chachipistachi_dnd/pantallas/monster_detail_screen.dart';
@@ -743,7 +742,7 @@ class _BattleScreenState extends State<BattleScreen> {
                     ? Theme.of(context).colorScheme.secondaryContainer
                     : Theme.of(
                         context,
-                      ).colorScheme.primaryContainer.withOpacity(0.5),
+                      ).colorScheme.primaryContainer.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
@@ -775,7 +774,7 @@ class _BattleScreenState extends State<BattleScreen> {
                       color: isActive
                           ? Theme.of(
                               context,
-                            ).colorScheme.onSecondaryContainer.withOpacity(0.7)
+                            ).colorScheme.onSecondaryContainer.withValues(alpha: 0.7)
                           : Colors.white70,
                       fontSize: 9,
                     ),

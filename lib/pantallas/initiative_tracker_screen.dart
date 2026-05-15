@@ -554,7 +554,7 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                     Card(
                       color: Theme.of(
                         context,
-                      ).colorScheme.primaryContainer.withOpacity(0.1),
+                      ).colorScheme.primaryContainer.withValues(alpha: 0.1),
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
@@ -797,7 +797,7 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                             decoration: BoxDecoration(
                               color: Theme.of(
                                 context,
-                              ).colorScheme.surfaceVariant.withOpacity(0.5),
+                              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                               borderRadius: const BorderRadius.only(
                                 bottomLeft: Radius.circular(12),
                                 bottomRight: Radius.circular(12),
