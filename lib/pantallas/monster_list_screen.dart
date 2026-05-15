@@ -706,16 +706,19 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
     return FutureBuilder<dynamic>(
       future: _futureData,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting)
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
-        if (snapshot.hasError)
+        }
+        if (snapshot.hasError) {
           return Center(child: Text("Error: ${snapshot.error}"));
+        }
 
         final List results = widget.isLocal
             ? snapshot.data
             : (snapshot.data as MonsterList).results ?? [];
-        if (results.isEmpty)
+        if (results.isEmpty) {
           return const Center(child: Text("No se encontraron criaturas."));
+        }
 
         return ListView.builder(
           padding: const EdgeInsets.only(top: 60),
@@ -850,19 +853,21 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
             _cargarDatos();
           },
         ),
-        onTap: () =>
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => MonsterDetailScreen(
-                  monsterName: name,
-                  monster: monster,
-                  monsterIndex: index,
-                ),
+        onTap: () async {
+          final updated = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MonsterDetailScreen(
+                monsterName: name,
+                monster: monster,
+                monsterIndex: index,
               ),
-            ).then((updated) {
-              if (updated == true) _cargarDatos();
-            }),
+            ),
+          );
+          if (mounted && updated == true) {
+            _cargarDatos();
+          }
+        },
       ),
     );
   }
@@ -881,8 +886,9 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
 
   /// Widget de imagen para criaturas locales (gestiona archivos, URLs y rutas relativas).
   Widget _buildLocalImage(String? imagePath) {
-    if (imagePath == null || imagePath.isEmpty)
+    if (imagePath == null || imagePath.isEmpty) {
       return const Icon(Icons.pets, size: 40, color: Colors.brown);
+    }
 
     if (imagePath.startsWith('http') || imagePath.startsWith('/api')) {
       final url = imagePath.startsWith('http')
@@ -897,8 +903,9 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
       );
     } else {
       final file = File(imagePath);
-      if (file.existsSync())
+      if (file.existsSync()) {
         return _imageContainer(Image.file(file, fit: BoxFit.cover));
+      }
     }
     return const Icon(Icons.pets, size: 40, color: Colors.brown);
   }

@@ -396,7 +396,8 @@ class MonsterReaction {
 
 /// Helper para parsear listas dinámicas en el JSON.
 List<T> parseList<T>(dynamic json, T Function(Map<String, dynamic>) fromJson) {
-  if (json is List)
+  if (json is List) {
     return json.map((e) => fromJson(e as Map<String, dynamic>)).toList();
+  }
   return [];
 }

@@ -3,7 +3,6 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io' show File;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:convert';
-import 'dart:math';
 import '../models/monster.dart';
 import '../models/monster_ability_registry.dart';
 import '../service/monster_storage_service.dart';
@@ -599,7 +598,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _selectedSize,
+                        initialValue: _selectedSize,
                         decoration: const InputDecoration(labelText: "Tamaño"),
                         items: _sizes
                             .map(
@@ -613,7 +612,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _selectedType,
+                        initialValue: _selectedType,
                         decoration: const InputDecoration(labelText: "Tipo"),
                         items: _types
                             .map(
@@ -635,7 +634,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _selectedAlign1,
+                        initialValue: _selectedAlign1,
                         items: _alignPart1
                             .map(
                               (a) => DropdownMenuItem(value: a, child: Text(a)),
@@ -648,7 +647,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _selectedAlign2,
+                        initialValue: _selectedAlign2,
                         items: _alignPart2
                             .map(
                               (a) => DropdownMenuItem(value: a, child: Text(a)),
@@ -1308,7 +1307,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     DropdownButtonFormField<num>(
-                      value: selectedCr,
+                      initialValue: selectedCr,
                       decoration: const InputDecoration(
                         labelText: "CR Objetivo",
                       ),
