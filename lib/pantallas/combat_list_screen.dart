@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:proyecto_chachipistachi_dnd/l10n/app_localizations.dart';
 import '../models/combat.dart';
 import '../service/combat_storage_service.dart';
 import 'initiative_tracker_screen.dart';
@@ -65,10 +66,11 @@ class _CombatListScreenState extends State<CombatListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text("Gestión de Combates"),
+        title: Text(l10n.combatManagement),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -77,7 +79,7 @@ class _CombatListScreenState extends State<CombatListScreen> {
           : _buildSessionList(),
       floatingActionButton: FloatingActionButton(
         onPressed: _createNewCombat,
-        tooltip: "Nuevo Combate",
+        tooltip: l10n.newCombat,
         child: const Icon(Icons.add),
       ),
     );
@@ -85,21 +87,22 @@ class _CombatListScreenState extends State<CombatListScreen> {
 
   /// Widget mostrado cuando no hay sesiones de combate guardadas.
   Widget _buildEmptyState() {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(Icons.shield_outlined, size: 100, color: Colors.grey),
           const SizedBox(height: 16),
-          const Text(
-            "No hay combates guardados",
-            style: TextStyle(fontSize: 18, color: Colors.grey),
+          Text(
+            l10n.noSavedCombats,
+            style: const TextStyle(fontSize: 18, color: Colors.grey),
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: _createNewCombat,
             icon: const Icon(Icons.add),
-            label: const Text("NUEVO COMBATE"),
+            label: Text(l10n.newCombatUpper),
           ),
         ],
       ),
@@ -108,6 +111,7 @@ class _CombatListScreenState extends State<CombatListScreen> {
 
   /// Lista de tarjetas representativas de cada sesión de combate.
   Widget _buildSessionList() {
+    final l10n = AppLocalizations.of(context)!;
     return ListView.builder(
       padding: const EdgeInsets.all(8),
       itemCount: _sessions.length,
@@ -133,7 +137,7 @@ class _CombatListScreenState extends State<CombatListScreen> {
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             subtitle: Text(
-              "Último cambio: $dateStr\nParticipantes: ${session.participants.length} | Ronda: ${session.round}",
+              "${l10n.lastChange(dateStr)}\n${l10n.participantsCount(session.participants.length)} | ${l10n.roundCount(session.round)}",
             ),
             isThreeLine: true,
             titleAlignment: ListTileTitleAlignment.center,
@@ -150,24 +154,23 @@ class _CombatListScreenState extends State<CombatListScreen> {
 
   /// Muestra un diálogo de confirmación antes de eliminar un combate.
   void _confirmDelete(CombatSession session) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Eliminar Combate"),
-        content: Text(
-          "¿Estás seguro de que quieres eliminar '${session.name}'?",
-        ),
+        title: Text(l10n.deleteCombat),
+        content: Text(l10n.confirmDeleteCombat(session.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("CANCELAR"),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               _deleteCombat(session.id);
             },
-            child: const Text("ELIMINAR", style: TextStyle(color: Colors.red)),
+            child: Text(l10n.deleteUpper, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),

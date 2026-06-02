@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io' show File;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:convert';
+import 'package:proyecto_chachipistachi_dnd/l10n/app_localizations.dart';
 import '../models/monster.dart';
 import '../models/monster_ability_registry.dart';
 import '../service/monster_storage_service.dart';
@@ -304,22 +305,23 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
 
   /// Muestra un diálogo para importar datos masivos pegando un JSON completo.
   void _importJson() {
+    final l10n = AppLocalizations.of(context)!;
     final jsonCol = TextEditingController();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Importar desde JSON"),
+        title: Text(l10n.importFromJson),
         content: TextField(
           controller: jsonCol,
-          decoration: const InputDecoration(
-            hintText: "Pega el JSON completo de la criatura aquí",
+          decoration: InputDecoration(
+            hintText: l10n.jsonHint,
           ),
           maxLines: 10,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancelar"),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () {
@@ -332,11 +334,11 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                 Navigator.pop(context);
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("Error en el formato JSON: $e")),
+                  SnackBar(content: Text(l10n.jsonError(e.toString()))),
                 );
               }
             },
-            child: const Text("Importar"),
+            child: Text(l10n.import),
           ),
         ],
       ),
@@ -345,6 +347,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
 
   /// Recopila todos los datos del formulario y los guarda de forma persistente.
   void _saveMonster() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_formKey.currentState!.validate()) {
       // Recomponer el alineamiento desde las dos partes seleccionadas.
       String alignment = _selectedAlign1 == "unaligned"
@@ -495,8 +498,8 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
           SnackBar(
             content: Text(
               widget.isEditing
-                  ? 'Criatura actualizada con éxito'
-                  : 'Criatura guardada con éxito',
+                  ? l10n.creatureUpdated
+                  : l10n.creatureSaved,
             ),
           ),
         );
@@ -507,28 +510,29 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(
           widget.isEditing
-              ? 'Editar: ${widget.baseMonster?.name}'
+              ? l10n.editCreature(widget.baseMonster?.name ?? '')
               : (widget.baseMonster != null
-                    ? 'Usar como base: ${widget.baseMonster?.name}'
-                    : 'Crear Nueva Criatura'),
+                    ? l10n.useAsBase(widget.baseMonster?.name ?? '')
+                    : l10n.createNewCreature),
         ),
         actions: [
           TextButton.icon(
             onPressed: _showRandomGeneratorDialog,
             icon: const Icon(Icons.auto_awesome, color: Colors.white),
-            label: const Text(
-              "Aleatorio",
-              style: TextStyle(color: Colors.white),
+            label: Text(
+              l10n.random,
+              style: const TextStyle(color: Colors.white),
             ),
           ),
           IconButton(
             icon: const Icon(Icons.code, color: Colors.white),
-            tooltip: "Importar Json",
+            tooltip: l10n.importJson,
             onPressed: _importJson,
           ),
         ],
@@ -541,7 +545,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
             child: ListView(
               children: [
                 Text(
-                  "Imagen",
+                  l10n.image,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
@@ -555,8 +559,8 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                     Expanded(
                       child: TextFormField(
                         controller: _imageController,
-                        decoration: const InputDecoration(
-                          labelText: 'URL de imagen o ruta local',
+                        decoration: InputDecoration(
+                          labelText: l10n.imageUrlOrPath,
                         ),
                         onChanged: (val) => setState(() {}),
                       ),
@@ -565,7 +569,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                     ElevatedButton.icon(
                       onPressed: _pickImage,
                       icon: const Icon(Icons.photo_library),
-                      label: const Text("GALERÍA"),
+                      label: Text(l10n.gallery),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(
                           context,
@@ -580,7 +584,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                 const Divider(height: 30),
 
                 Text(
-                  "Datos Básicos",
+                  l10n.basicData,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
@@ -589,9 +593,9 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                 ),
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Nombre'),
+                  decoration: InputDecoration(labelText: l10n.name),
                   validator: (value) => value == null || value.isEmpty
-                      ? 'El nombre es obligatorio'
+                      ? l10n.nameRequired
                       : null,
                 ),
                 Row(
@@ -599,7 +603,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         initialValue: _selectedSize,
-                        decoration: const InputDecoration(labelText: "Tamaño"),
+                        decoration: InputDecoration(labelText: l10n.size),
                         items: _sizes
                             .map(
                               (s) => DropdownMenuItem(value: s, child: Text(s)),
@@ -613,7 +617,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         initialValue: _selectedType,
-                        decoration: const InputDecoration(labelText: "Tipo"),
+                        decoration: InputDecoration(labelText: l10n.type),
                         items: _types
                             .map(
                               (t) => DropdownMenuItem(value: t, child: Text(t)),
@@ -626,9 +630,9 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                   ],
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  "Alineamiento",
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                Text(
+                  l10n.alignment,
+                  style: const TextStyle(fontSize: 14, color: Colors.grey),
                 ),
                 Row(
                   children: [
@@ -666,7 +670,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                       flex: 1,
                       child: TextFormField(
                         controller: _hpController,
-                        decoration: const InputDecoration(labelText: 'HP'),
+                        decoration: InputDecoration(labelText: l10n.hp),
                         keyboardType: TextInputType.number,
                       ),
                     ),
@@ -675,8 +679,8 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                       flex: 1,
                       child: TextFormField(
                         controller: _acController,
-                        decoration: const InputDecoration(
-                          labelText: 'AC (Valor)',
+                        decoration: InputDecoration(
+                          labelText: l10n.acValue,
                         ),
                         keyboardType: TextInputType.number,
                       ),
@@ -686,8 +690,8 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                       flex: 2,
                       child: TextFormField(
                         controller: _acTypeController,
-                        decoration: const InputDecoration(
-                          labelText: 'Tipo de AC (ej: natural, armor)',
+                        decoration: InputDecoration(
+                          labelText: l10n.acType,
                         ),
                       ),
                     ),
@@ -698,8 +702,8 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                     Expanded(
                       child: TextFormField(
                         controller: _hitDiceController,
-                        decoration: const InputDecoration(
-                          labelText: 'Hit Dice',
+                        decoration: InputDecoration(
+                          labelText: l10n.hitDice,
                         ),
                       ),
                     ),
@@ -707,7 +711,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                     Expanded(
                       child: TextFormField(
                         controller: _hpRollController,
-                        decoration: const InputDecoration(labelText: 'HP Roll'),
+                        decoration: InputDecoration(labelText: l10n.hpRoll),
                       ),
                     ),
                   ],
@@ -715,7 +719,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
 
                 const SizedBox(height: 20),
                 Text(
-                  "Velocidad",
+                  l10n.speed,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
@@ -727,21 +731,21 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                     Expanded(
                       child: TextFormField(
                         controller: _walkSpeedController,
-                        decoration: const InputDecoration(labelText: 'Walk'),
+                        decoration: InputDecoration(labelText: l10n.walk),
                       ),
                     ),
                     const SizedBox(width: 5),
                     Expanded(
                       child: TextFormField(
                         controller: _flySpeedController,
-                        decoration: const InputDecoration(labelText: 'Fly'),
+                        decoration: InputDecoration(labelText: l10n.fly),
                       ),
                     ),
                     const SizedBox(width: 5),
                     Expanded(
                       child: TextFormField(
                         controller: _swimSpeedController,
-                        decoration: const InputDecoration(labelText: 'Swim'),
+                        decoration: InputDecoration(labelText: l10n.swim),
                       ),
                     ),
                   ],
@@ -749,7 +753,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
 
                 const SizedBox(height: 20),
                 Text(
-                  "Atributos",
+                  l10n.attributes,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
@@ -757,39 +761,39 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                   ),
                 ),
                 _buildStatSelector(
-                  "Fuerza (STR)",
+                  l10n.str,
                   _str,
                   (val) => setState(() => _str = val),
                 ),
                 _buildStatSelector(
-                  "Destreza (DEX)",
+                  l10n.dex,
                   _dex,
                   (val) => setState(() => _dex = val),
                 ),
                 _buildStatSelector(
-                  "Constitución (CON)",
+                  l10n.con,
                   _con,
                   (val) => setState(() => _con = val),
                 ),
                 _buildStatSelector(
-                  "Inteligencia (INT)",
+                  l10n.intel,
                   _int,
                   (val) => setState(() => _int = val),
                 ),
                 _buildStatSelector(
-                  "Sabiduría (WIS)",
+                  l10n.wis,
                   _wis,
                   (val) => setState(() => _wis = val),
                 ),
                 _buildStatSelector(
-                  "Carisma (CHA)",
+                  l10n.cha,
                   _cha,
                   (val) => setState(() => _cha = val),
                 ),
 
                 const SizedBox(height: 20),
                 Text(
-                  "Desafío y XP",
+                  l10n.challengeAndXp,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
@@ -801,7 +805,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                     Expanded(
                       child: TextFormField(
                         controller: _crController,
-                        decoration: const InputDecoration(labelText: 'CR'),
+                        decoration: InputDecoration(labelText: l10n.cr),
                         keyboardType: TextInputType.number,
                       ),
                     ),
@@ -817,8 +821,8 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                     Expanded(
                       child: TextFormField(
                         controller: _pbController,
-                        decoration: const InputDecoration(
-                          labelText: 'Prof. Bonus',
+                        decoration: InputDecoration(
+                          labelText: l10n.profBonus,
                         ),
                         keyboardType: TextInputType.number,
                       ),
@@ -828,7 +832,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
 
                 const SizedBox(height: 20),
                 Text(
-                  "Sentidos",
+                  l10n.senses,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
@@ -837,31 +841,31 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                 ),
                 TextFormField(
                   controller: _blindsightController,
-                  decoration: const InputDecoration(labelText: 'Blindsight'),
+                  decoration: InputDecoration(labelText: l10n.blindsight),
                 ),
                 TextFormField(
                   controller: _darkvisionController,
-                  decoration: const InputDecoration(labelText: 'Darkvision'),
+                  decoration: InputDecoration(labelText: l10n.darkvision),
                 ),
                 TextFormField(
                   controller: _tremorsenseController,
-                  decoration: const InputDecoration(labelText: 'Tremorsense'),
+                  decoration: InputDecoration(labelText: l10n.tremorsense),
                 ),
                 TextFormField(
                   controller: _truesightController,
-                  decoration: const InputDecoration(labelText: 'Truesight'),
+                  decoration: InputDecoration(labelText: l10n.truesight),
                 ),
                 TextFormField(
                   controller: _passivePerceptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Passive Perception',
+                  decoration: InputDecoration(
+                    labelText: l10n.passivePerception,
                   ),
                   keyboardType: TextInputType.number,
                 ),
 
                 const SizedBox(height: 20),
                 Text(
-                  "Otros",
+                  l10n.other,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
@@ -870,49 +874,49 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                 ),
                 TextFormField(
                   controller: _languagesController,
-                  decoration: const InputDecoration(labelText: 'Idiomas'),
+                  decoration: InputDecoration(labelText: l10n.languages),
                 ),
                 TextFormField(
                   controller: _vulnerabilitiesController,
-                  decoration: const InputDecoration(
-                    labelText: 'Vulnerabilidades',
+                  decoration: InputDecoration(
+                    labelText: l10n.vulnerabilities,
                   ),
                 ),
                 TextFormField(
                   controller: _resistancesController,
-                  decoration: const InputDecoration(labelText: 'Resistencias'),
+                  decoration: InputDecoration(labelText: l10n.resistances),
                 ),
                 TextFormField(
                   controller: _immunitiesController,
-                  decoration: const InputDecoration(labelText: 'Inmunidades'),
+                  decoration: InputDecoration(labelText: l10n.immunities),
                 ),
 
                 const SizedBox(height: 20),
                 // Editores para elementos de lista dinámicos.
                 // Editores con autocompletado del registro, categorizados.
                 _buildComplexListEditor<SpecialAbility>(
-                  "Habilidades Especiales",
+                  l10n.specialAbilities,
                   _specialAbilities,
                   (name, desc) => SpecialAbility(name: name, desc: desc),
                   'special_ability', // Categoría del registro.
                 ),
                 const SizedBox(height: 20),
                 _buildComplexListEditor<MonsterAction>(
-                  "Acciones",
+                  l10n.actions,
                   _actions,
                   (name, desc) => MonsterAction(name: name, desc: desc),
                   'action', // Categoría del registro.
                 ),
                 const SizedBox(height: 20),
                 _buildComplexListEditor<LegendaryAction>(
-                  "Acciones Legendarias",
+                  l10n.legendaryActions,
                   _legendaryActions,
                   (name, desc) => LegendaryAction(name: name, desc: desc),
                   'legendary_action', // Categoría del registro.
                 ),
                 const SizedBox(height: 20),
                 _buildComplexListEditor<MonsterReaction>(
-                  "Reacciones",
+                  l10n.reactions,
                   _reactions,
                   (name, desc) => MonsterReaction(name: name, desc: desc),
                   'reaction', // Categoría del registro.
@@ -922,11 +926,11 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                 ElevatedButton.icon(
                   onPressed: _saveMonster,
                   icon: const Icon(Icons.save),
-                  label: const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12.0),
+                  label: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12.0),
                     child: Text(
-                      'GUARDAR CRIATURA',
-                      style: TextStyle(fontSize: 16),
+                      l10n.saveCreature,
+                      style: const TextStyle(fontSize: 16),
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -1020,6 +1024,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
     T Function(String name, String desc) creator,
     String category,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1044,7 +1049,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                 color: Theme.of(context).colorScheme.primary,
               ),
               label: Text(
-                "AÑADIR",
+                l10n.add,
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.primary,
                   fontWeight: FontWeight.bold,
@@ -1058,7 +1063,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
           dynamic item = entry.value;
           return ListTile(
             title: Text(
-              item.name ?? "Sin nombre",
+              item.name ?? l10n.noName,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             subtitle: Text(
@@ -1069,9 +1074,9 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
             trailing: TextButton.icon(
               onPressed: () => setState(() => list.removeAt(idx)),
               icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-              label: const Text(
-                "BORRAR",
-                style: TextStyle(color: Colors.red, fontSize: 12),
+              label: Text(
+                l10n.delete,
+                style: const TextStyle(color: Colors.red, fontSize: 12),
               ),
             ),
             // Abre el diálogo de edición con datos precargados y sugerencias.
@@ -1116,6 +1121,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
     Function(String, String) onSave,
     String category,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     // Controller para la descripción (se auto-rellena al seleccionar sugerencia).
     final descCol = TextEditingController(text: initialDesc);
     // Referencia al controller del nombre, gestionado por el Autocomplete.
@@ -1129,7 +1135,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text("Editar $title"),
+        title: Text(l10n.editItem(title)),
         content: SizedBox(
           // Ancho fijo para que el Autocomplete tenga espacio para el overlay.
           width: double.maxFinite,
@@ -1169,9 +1175,9 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                         return TextField(
                           controller: controller,
                           focusNode: focusNode,
-                          decoration: const InputDecoration(
-                            labelText: "Nombre",
-                            hintText: "Escribe para ver sugerencias...",
+                          decoration: InputDecoration(
+                            labelText: l10n.name,
+                            hintText: l10n.typeToSeeSuggestions,
                           ),
                         );
                       },
@@ -1224,7 +1230,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                 // Campo de descripción con texto libre.
                 TextField(
                   controller: descCol,
-                  decoration: const InputDecoration(labelText: "Descripción"),
+                  decoration: InputDecoration(labelText: l10n.description),
                   maxLines: 5,
                 ),
               ],
@@ -1234,7 +1240,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text("Cancelar"),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () {
@@ -1242,7 +1248,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
               onSave(nameFieldController?.text ?? '', descCol.text);
               Navigator.pop(dialogContext);
             },
-            child: const Text("Guardar"),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -1258,27 +1264,24 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
   /// - Acciones legendarias
   /// - Reacciones
   void _showRandomGeneratorDialog() {
+    final l10n = AppLocalizations.of(context)!;
     if (_registryEntries.isEmpty) {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text("Registro Vacío"),
-          content: const Text(
-            "No hay habilidades guardadas en el registro local. "
-            "Es necesario consultar criaturas del bestiario (API) para "
-            "llenar el registro antes de poder generar una criatura aleatoria.",
-          ),
+          title: Text(l10n.emptyRegistry),
+          content: Text(l10n.emptyRegistryMessage),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancelar"),
+              child: Text(l10n.cancel),
             ),
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context); // Cierra este diálogo
                 Navigator.pushNamed(context, '/api'); // Navega a la API
               },
-              child: const Text("Ir a la API"),
+              child: Text(l10n.goToApi),
             ),
           ],
         ),
@@ -1301,15 +1304,15 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              title: const Text("Generador Aleatorio"),
+              title: Text(l10n.randomGenerator),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     DropdownButtonFormField<num>(
                       initialValue: selectedCr,
-                      decoration: const InputDecoration(
-                        labelText: "CR Objetivo",
+                      decoration: InputDecoration(
+                        labelText: l10n.targetCr,
                       ),
                       items: crOptions.map((cr) {
                         String label = cr.toString();
@@ -1329,7 +1332,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            "Habilidades Especiales: $numSpecialAbilities",
+                            "${l10n.specialAbilities}: $numSpecialAbilities",
                           ),
                         ),
                         Slider(
@@ -1345,7 +1348,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                     ),
                     Row(
                       children: [
-                        Expanded(child: Text("Acciones: $numActions")),
+                        Expanded(child: Text("${l10n.actions}: $numActions")),
                         Slider(
                           value: numActions.toDouble(),
                           min: 0,
@@ -1360,7 +1363,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            "Acciones Legendarias: $numLegendaryActions",
+                            "${l10n.legendaryActions}: $numLegendaryActions",
                           ),
                         ),
                         Slider(
@@ -1376,7 +1379,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                     ),
                     Row(
                       children: [
-                        Expanded(child: Text("Reacciones: $numReactions")),
+                        Expanded(child: Text("${l10n.reactions}: $numReactions")),
                         Slider(
                           value: numReactions.toDouble(),
                           min: 0,
@@ -1393,7 +1396,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text("Cancelar"),
+                  child: Text(l10n.cancel),
                 ),
                 TextButton(
                   onPressed: () {
@@ -1406,7 +1409,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
                       numReactions,
                     );
                   },
-                  child: const Text("Generar"),
+                  child: Text(l10n.generate),
                 ),
               ],
             );
@@ -1431,6 +1434,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
     int numLegendaryActions,
     int numReactions,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     final monster = MonsterRandomizerService.generateRandomMonster(
       targetCr: cr,
       numSpecialAbilities: numSpecialAbilities,
@@ -1490,7 +1494,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
       _reactions = List.from(monster.reactions ?? []);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Generada criatura aleatoria CR $cr')),
+        SnackBar(content: Text(l10n.randomCreatureGenerated(cr))),
       );
     });
   }

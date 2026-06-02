@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:math';
 import 'package:provider/provider.dart';
+import 'package:proyecto_chachipistachi_dnd/l10n/app_localizations.dart';
 import 'package:proyecto_chachipistachi_dnd/models/monster.dart';
 import 'package:proyecto_chachipistachi_dnd/providers/battle_queue_provider.dart';
 
@@ -195,14 +196,15 @@ class _BattleScreenState extends State<BattleScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     // La interfaz se divide en un AppBar con controles globales y el cuerpo principal adaptativo.
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(
           !_isCombatStarted
-              ? "Preparación ($_gridCount x $_gridCount)"
-              : "Ronda $_round - ${_combatants[_turnIndex].monster.name}",
+              ? "${l10n.preparation} ($_gridCount x $_gridCount)"
+              : "${l10n.round} $_round - ${_combatants[_turnIndex].monster.name}",
         ),
         actions: [
           // Botón para iniciar el combate si aún no ha empezado
@@ -210,9 +212,9 @@ class _BattleScreenState extends State<BattleScreen> {
             TextButton.icon(
               onPressed: _startCombat,
               icon: const Icon(Icons.play_arrow, color: Colors.white),
-              label: const Text(
-                "INICIAR",
-                style: TextStyle(
+              label: Text(
+                l10n.start,
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
@@ -222,19 +224,19 @@ class _BattleScreenState extends State<BattleScreen> {
           IconButton(
             icon: const Icon(Icons.casino),
             onPressed: _showDiceRollingDialog,
-            tooltip: "Lanzar Dados",
+            tooltip: l10n.rollDice,
           ),
           // Configuración de las dimensiones de la cuadrícula
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: _showSettingsDialog,
-            tooltip: "Configurar Tablero",
+            tooltip: l10n.configureBoard,
           ),
           // Acceso a la cola para añadir nuevas criaturas al campo
           IconButton(
             icon: const Icon(Icons.person_add),
             onPressed: _showAddMonsterDialog,
-            tooltip: "Añadir Criatura",
+            tooltip: l10n.addCreature,
           ),
           // Avance manual de turnos
           IconButton(
@@ -242,7 +244,7 @@ class _BattleScreenState extends State<BattleScreen> {
             onPressed: _isCombatStarted && _combatants.isNotEmpty
                 ? _nextTurn
                 : null,
-            tooltip: "Siguiente Turno",
+            tooltip: l10n.nextTurn,
           ),
         ],
       ),
@@ -382,6 +384,7 @@ class _BattleScreenState extends State<BattleScreen> {
 
   /// Construye el panel con las acciones, reacciones y movimiento de la criatura activa.
   Widget _buildActiveCreatureDetails({bool isLandscape = false}) {
+    final l10n = AppLocalizations.of(context)!;
     final activeCombatant = _combatants[_turnIndex];
     final active = activeCombatant.monster;
     int speedCells = _getSpeedInCells(active.speed?.walk);
@@ -400,7 +403,7 @@ class _BattleScreenState extends State<BattleScreen> {
             children: [
               Expanded(
                 child: Text(
-                  "TURNO DE: ${active.name?.toUpperCase()}",
+                  l10n.turnOf(active.name?.toUpperCase() ?? l10n.noName),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.primary,
@@ -423,7 +426,7 @@ class _BattleScreenState extends State<BattleScreen> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    "MOVIMIENTO: ${activeCombatant.movedThisTurn} / $speedCells casillas",
+                    "${l10n.movement} ${activeCombatant.movedThisTurn} / $speedCells ${l10n.cells}",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
@@ -439,7 +442,7 @@ class _BattleScreenState extends State<BattleScreen> {
                     onPressed: activeCombatant.movedThisTurn > 0
                         ? _resetMovement
                         : null,
-                    tooltip: "Rehacer movimiento",
+                    tooltip: l10n.redoMovement,
                     constraints: const BoxConstraints(),
                     padding: EdgeInsets.zero,
                   ),
@@ -455,9 +458,9 @@ class _BattleScreenState extends State<BattleScreen> {
                 children: [
                   // Listado de Acciones normales del monstruo
                   if (active.actions != null && active.actions!.isNotEmpty) ...[
-                    const Text(
-                      "ACCIONES:",
-                      style: TextStyle(
+                    Text(
+                      l10n.actions,
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 11,
                       ),
@@ -476,9 +479,9 @@ class _BattleScreenState extends State<BattleScreen> {
                   if (active.reactions != null &&
                       active.reactions!.isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    const Text(
-                      "REACCIONES:",
-                      style: TextStyle(
+                    Text(
+                      l10n.reactions,
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 11,
                         color: Colors.blueGrey,
@@ -498,9 +501,9 @@ class _BattleScreenState extends State<BattleScreen> {
                   if (active.legendaryActions != null &&
                       active.legendaryActions!.isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    const Text(
-                      "ACCIONES LEGENDARIAS:",
-                      style: TextStyle(
+                    Text(
+                      l10n.legendaryActions,
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 11,
                         color: Colors.deepOrange,
@@ -605,6 +608,7 @@ class _BattleScreenState extends State<BattleScreen> {
 
   /// Muestra un menú/diálogo para elegir cantidad y tipo de dados a lanzar.
   void _showDiceRollingDialog() {
+    final l10n = AppLocalizations.of(context)!;
     int quantity = 1;
     final diceTypes = [4, 6, 8, 10, 12, 20];
 
@@ -612,7 +616,7 @@ class _BattleScreenState extends State<BattleScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text("Lanzar Dados"),
+          title: Text(l10n.rollDice),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -620,7 +624,7 @@ class _BattleScreenState extends State<BattleScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text("Cantidad: "),
+                    Text(l10n.quantity),
                     IconButton(
                       icon: const Icon(Icons.remove),
                       onPressed: quantity > 1
@@ -660,7 +664,7 @@ class _BattleScreenState extends State<BattleScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              "Tirada: ${quantity}d$d\nResultados: ${rolls.join(', ')}\nTotal: $total",
+                              "${l10n.roll} ${quantity}d$d\n${l10n.results} ${rolls.join(', ')}\n${l10n.total} $total",
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 fontSize: 16,
@@ -692,7 +696,7 @@ class _BattleScreenState extends State<BattleScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("CERRAR"),
+              child: Text(l10n.close),
             ),
           ],
         ),
@@ -790,17 +794,18 @@ class _BattleScreenState extends State<BattleScreen> {
 
   /// Diálogo de configuración para redimensionar la cuadrícula del tablero.
   void _showSettingsDialog() {
+    final l10n = AppLocalizations.of(context)!;
     int tempCount = _gridCount;
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text("Tamaño del Tablero"),
+          title: Text(l10n.boardSize),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text("Cuadrícula: $tempCount x $tempCount"),
+              Text("${l10n.grid} $tempCount x $tempCount"),
               Slider(
                 value: tempCount.toDouble(),
                 min: 3,
@@ -808,9 +813,9 @@ class _BattleScreenState extends State<BattleScreen> {
                 divisions: 12,
                 onChanged: (v) => setDialogState(() => tempCount = v.toInt()),
               ),
-              const Text(
-                "El tamaño de las casillas se ajustará automáticamente.",
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+              Text(
+                l10n.gridAutoAdjust,
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -818,7 +823,7 @@ class _BattleScreenState extends State<BattleScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("CANCELAR"),
+              child: Text(l10n.cancel),
             ),
             ElevatedButton(
               onPressed: () {
@@ -839,7 +844,7 @@ class _BattleScreenState extends State<BattleScreen> {
                 });
                 Navigator.pop(context);
               },
-              child: const Text("GUARDAR"),
+              child: Text(l10n.save),
             ),
           ],
         ),
@@ -849,6 +854,7 @@ class _BattleScreenState extends State<BattleScreen> {
 
   /// Muestra el listado de criaturas en cola para poder añadirlas al combate activo.
   void _showAddMonsterDialog() {
+    final l10n = AppLocalizations.of(context)!;
     final battleQueue = Provider.of<BattleQueueProvider>(
       context,
       listen: false,
@@ -858,7 +864,7 @@ class _BattleScreenState extends State<BattleScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Añadir al combate"),
+        title: Text(l10n.addToCombat),
         content: SizedBox(
           width: double.maxFinite,
           child: SingleChildScrollView(
@@ -867,17 +873,17 @@ class _BattleScreenState extends State<BattleScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (queuedMonsters.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8.0),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
                     child: Text(
-                      "La cola de batalla está vacía. Añade criaturas desde el Bestiario o Mis Criaturas primero.",
+                      l10n.emptyQueueMessage,
                       textAlign: TextAlign.center,
                     ),
                   )
                 else ...[
-                  const Text(
-                    "COLA DE BATALLA",
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  Text(
+                    l10n.battleQueue,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   ...queuedMonsters.asMap().entries.map((entry) {
@@ -886,7 +892,7 @@ class _BattleScreenState extends State<BattleScreen> {
                       leading: CircleAvatar(
                         backgroundImage: _getMonsterImage(m),
                       ),
-                      title: Text(m.name ?? "Sin nombre"),
+                      title: Text(m.name ?? l10n.noName),
                       subtitle: Text("${m.size} ${m.type}"),
                       trailing: IconButton(
                         icon: const Icon(
@@ -921,14 +927,14 @@ class _BattleScreenState extends State<BattleScreen> {
                 Navigator.pop(context);
                 _showAddMonsterDialog();
               },
-              child: const Text(
-                "LIMPIAR COLA",
-                style: TextStyle(color: Colors.red),
+              child: Text(
+                l10n.clearQueue,
+                style: const TextStyle(color: Colors.red),
               ),
             ),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("CERRAR"),
+            child: Text(l10n.close),
           ),
         ],
       ),
@@ -937,6 +943,7 @@ class _BattleScreenState extends State<BattleScreen> {
 
   /// Despliega un panel inferior para realizar ajustes rápidos a un combatiente (HP, Iniciativa, Reacciones).
   void _showMonsterQuickAction(Combatant c) {
+    final l10n = AppLocalizations.of(context)!;
     // Controladores para sincronizar los campos de texto con el estado del combatiente
     final hpEditController = TextEditingController(
       text: c.currentHp.toString(),
@@ -987,9 +994,9 @@ class _BattleScreenState extends State<BattleScreen> {
                 const SizedBox(height: 16),
 
                 // --- Control de Puntos de Vida (HP) ---
-                const Text(
-                  "PUNTOS DE VIDA",
-                  style: TextStyle(
+                Text(
+                  l10n.hitPoints,
+                  style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: Colors.grey,
@@ -1059,9 +1066,9 @@ class _BattleScreenState extends State<BattleScreen> {
                 // Permite corregir el orden de turnos manualmente
                 TextField(
                   controller: initiativeEditController,
-                  decoration: const InputDecoration(
-                    labelText: "Iniciativa",
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.initiative,
+                    border: const OutlineInputBorder(),
                   ),
                   keyboardType: TextInputType.number,
                   onChanged: (val) {
@@ -1079,9 +1086,9 @@ class _BattleScreenState extends State<BattleScreen> {
                 if (c.monster.reactions != null &&
                     c.monster.reactions!.isNotEmpty) ...[
                   const Divider(height: 30),
-                  const Text(
-                    "REACCIONES",
-                    style: TextStyle(
+                  Text(
+                    l10n.reactions,
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.blueGrey,
                     ),
@@ -1113,7 +1120,7 @@ class _BattleScreenState extends State<BattleScreen> {
                 // Opción para eliminar permanentemente a la criatura de esta batalla (ej: si muere)
                 ListTile(
                   leading: const Icon(Icons.delete, color: Colors.red),
-                  title: const Text("Eliminar de la batalla"),
+                  title: Text(l10n.removeFromBattle),
                   onTap: () {
                     setState(() => _combatants.remove(c));
                     Navigator.pop(context);

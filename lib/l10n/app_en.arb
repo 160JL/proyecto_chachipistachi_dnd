@@ -1,0 +1,268 @@
+{
+  "appTitle": "DnD Companion",
+  "battleSimulation": "Battle Simulation",
+  "initiativeTracker": "Initiative Tracker",
+  "createNewCreature": "Create New Creature",
+  "consultBestiary": "Consult Bestiary (API)",
+  "mySavedCreatures": "My Saved Creatures",
+  "changelogTitle": "Changelog",
+  "version": "Version",
+  "close": "CLOSE",
+  "preparation": "Preparation",
+  "round": "Round",
+  "start": "START",
+  "rollDice": "Roll Dice",
+  "configureBoard": "Configure Board",
+  "addCreature": "Add Creature",
+  "nextTurn": "Next Turn",
+  "turnOf": "TURN OF: {name}",
+  "@turnOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "movement": "MOVEMENT:",
+  "cells": "cells",
+  "redoMovement": "Redo movement",
+  "actions": "ACTIONS:",
+  "reactions": "REACTIONS:",
+  "legendaryActions": "LEGENDARY ACTIONS:",
+  "quantity": "Quantity:",
+  "roll": "Roll:",
+  "results": "Results:",
+  "total": "Total:",
+  "boardSize": "Board Size",
+  "grid": "Grid:",
+  "gridAutoAdjust": "Cell size will adjust automatically.",
+  "cancel": "CANCEL",
+  "save": "SAVE",
+  "addToCombat": "Add to combat",
+  "emptyQueueMessage": "The battle queue is empty. Add creatures from the Bestiary or My Creatures first.",
+  "battleQueue": "BATTLE QUEUE",
+  "clearQueue": "CLEAR QUEUE",
+  "noName": "No name",
+  "hitPoints": "HIT POINTS",
+  "initiative": "Initiative",
+  "removeFromBattle": "Remove from battle",
+  "localRepository": "Local Repository",
+  "bestiaryApi": "Bestiary API",
+  "updateBestiary": "Update Bestiary",
+  "updateBestiaryMessage": "Do you want to update the list or rebuild the skill registry?",
+  "onlyList": "Only list",
+  "everything": "Everything",
+  "update": "Update",
+  "searchByName": "Search by name...",
+  "clear": "CLEAR",
+  "advancedFilters": "Advanced Filters",
+  "type": "Type",
+  "size": "Size",
+  "alignment": "Alignment",
+  "cr": "CR",
+  "sortBy": "Sort by",
+  "vulnerabilities": "Vulnerabilities",
+  "resistances": "Resistances",
+  "immunities": "Immunities",
+  "applyFilters": "APPLY FILTERS",
+  "nameAsc": "Name (A-Z)",
+  "nameDesc": "Name (Z-A)",
+  "crAsc": "CR (Low-High)",
+  "crDesc": "CR (High-Low)",
+  "loading": "Loading...",
+  "noCreaturesFound": "No creatures found.",
+  "buildingRegistry": "Building Skill Registry",
+  "syncingBestiary": "Syncing local bestiary. This process only happens once.",
+  "creaturesProcessed": "{current} / {total} creatures processed",
+  "@creaturesProcessed": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "all": "All",
+  "image": "Image",
+  "imageUrlOrPath": "Image URL or local path",
+  "gallery": "GALLERY",
+  "basicData": "Basic Data",
+  "name": "Name",
+  "nameRequired": "Name is required",
+  "hp": "HP",
+  "acValue": "AC (Value)",
+  "acType": "AC Type (e.g., natural, armor)",
+  "hitDice": "Hit Dice",
+  "hpRoll": "HP Roll",
+  "speed": "Speed",
+  "walk": "Walk",
+  "fly": "Fly",
+  "swim": "Swim",
+  "attributes": "Attributes",
+  "str": "Strength (STR)",
+  "dex": "Dexterity (DEX)",
+  "con": "Constitution (CON)",
+  "intel": "Intelligence (INT)",
+  "wis": "Wisdom (WIS)",
+  "cha": "Charisma (CHA)",
+  "challengeAndXp": "Challenge and XP",
+  "profBonus": "Prof. Bonus",
+  "senses": "Senses",
+  "blindsight": "Blindsight",
+  "darkvision": "Darkvision",
+  "tremorsense": "Tremorsense",
+  "truesight": "Truesight",
+  "passivePerception": "Passive Perception",
+  "other": "Other",
+  "languages": "Languages",
+  "specialAbilities": "Special Abilities",
+  "saveCreature": "SAVE CREATURE",
+  "importFromJson": "Import from JSON",
+  "jsonHint": "Paste the complete creature JSON here",
+  "import": "Import",
+  "jsonError": "JSON format error: {error}",
+  "@jsonError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "creatureUpdated": "Creature updated successfully",
+  "creatureSaved": "Creature saved successfully",
+  "editCreature": "Edit: {name}",
+  "@editCreature": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "useAsBase": "Use as base: {name}",
+  "@useAsBase": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "random": "Random",
+  "importJson": "Import Json",
+  "add": "ADD",
+  "delete": "DELETE",
+  "editItem": "Edit {item}",
+  "@editItem": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      }
+    }
+  },
+  "typeToSeeSuggestions": "Type to see suggestions...",
+  "description": "Description",
+  "emptyRegistry": "Empty Registry",
+  "emptyRegistryMessage": "There are no skills saved in the local registry. It is necessary to consult creatures from the bestiary (API) to fill the registry before being able to generate a random creature.",
+  "goToApi": "Go to API",
+  "randomGenerator": "Random Generator",
+  "targetCr": "Target CR",
+  "generate": "Generate",
+  "randomCreatureGenerated": "Random creature generated CR {cr}",
+  "@randomCreatureGenerated": {
+    "placeholders": {
+      "cr": {
+        "type": "num"
+      }
+    }
+  },
+  "combatManagement": "Combat Management",
+  "newCombat": "New Combat",
+  "noSavedCombats": "No saved combats",
+  "newCombatUpper": "NEW COMBAT",
+  "lastChange": "Last change: {date}",
+  "@lastChange": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "participantsCount": "Participants: {count}",
+  "@participantsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "roundCount": "Round: {round}",
+  "@roundCount": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteCombat": "Delete Combat",
+  "confirmDeleteCombat": "Are you sure you want to delete '{name}'?",
+  "@confirmDeleteCombat": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteUpper": "DELETE",
+  "creature": "Creature",
+  "deleteParticipant": "Delete Participant",
+  "confirmDeleteParticipant": "Are you sure you want to delete {name} from the combat?",
+  "@confirmDeleteParticipant": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addPlayer": "Add Player",
+  "initiativeBonus": "Initiative Bonus",
+  "editInitiative": "Edit Initiative - {name}",
+  "@editInitiative": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "initiativeValue": "Initiative value",
+  "hpManagement": "HP Management - {name}",
+  "@hpManagement": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "currentHp": "Current HP",
+  "tempHp": "Temporary HP",
+  "combatName": "Combat Name",
+  "preparationUpper": "PREPARATION",
+  "addCreatures": "Add Creatures",
+  "addPlayers": "Add Players",
+  "rollMonsters": "ROLL MONSTERS",
+  "rollPlayers": "ROLL PLAYERS",
+  "startCombat": "START COMBAT",
+  "roundUpper": "ROUND {round}",
+  "@roundUpper": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "nextTurnUpper": "NEXT TURN",
+  "endCombat": "END COMBAT",
+  "player": "PLAYER",
+  "addFromQueue": "Add from Queue",
+  "emptyQueueBestiary": "The battle queue is empty. Add creatures from the Bestiary."
+}

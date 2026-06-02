@@ -1,4 +1,4 @@
-# proyecto_chachipistachi_dnd
+# Asistente DnD
 
 Proyecto fin de curso, generador DnD
 

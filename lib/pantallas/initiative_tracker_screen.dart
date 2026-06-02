@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import 'dart:io';
 import 'package:provider/provider.dart';
+import 'package:proyecto_chachipistachi_dnd/l10n/app_localizations.dart';
 import '../models/monster.dart';
 import '../models/combat.dart';
 import '../providers/battle_queue_provider.dart';
@@ -180,18 +181,17 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
 
   /// Pide confirmación para eliminar a un participante.
   void _confirmDelete(int index) {
+    final l10n = AppLocalizations.of(context)!;
     final p = _session.participants[index];
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Eliminar Participante"),
-        content: Text(
-          "¿Estás seguro de que quieres eliminar a ${p.name} del combate?",
-        ),
+        title: Text(l10n.deleteParticipant),
+        content: Text(l10n.confirmDeleteParticipant(p.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("CANCELAR"),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -206,9 +206,9 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
               _saveSession();
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text(
-              "ELIMINAR",
-              style: TextStyle(color: Colors.white),
+            child: Text(
+              l10n.deleteUpper,
+              style: const TextStyle(color: Colors.white),
             ),
           ),
         ],
@@ -234,21 +234,22 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
 
   /// Muestra un diálogo para añadir un nuevo jugador manualmente.
   void _addPlayer() {
+    final l10n = AppLocalizations.of(context)!;
     String name = "";
     int bonus = 0;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Añadir Jugador"),
+        title: Text(l10n.addPlayer),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
-              decoration: const InputDecoration(labelText: "Nombre"),
+              decoration: InputDecoration(labelText: l10n.name),
               onChanged: (val) => name = val,
             ),
             TextField(
-              decoration: const InputDecoration(labelText: "Bono Iniciativa"),
+              decoration: InputDecoration(labelText: l10n.initiativeBonus),
               keyboardType: TextInputType.number,
               onChanged: (val) => bonus = int.tryParse(val) ?? 0,
             ),
@@ -257,7 +258,7 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("CANCELAR"),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -274,7 +275,7 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
               Navigator.pop(context);
               _saveSession();
             },
-            child: const Text("AÑADIR"),
+            child: Text(l10n.add),
           ),
         ],
       ),
@@ -283,21 +284,22 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
 
   /// Diálogo para editar el valor de iniciativa de un participante.
   void _editInitiative(Participant p) {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController(text: p.initiative.toString());
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Editar Iniciativa - ${p.name}"),
+        title: Text(l10n.editInitiative(p.name)),
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
           autofocus: true,
-          decoration: const InputDecoration(hintText: "Valor de iniciativa"),
+          decoration: InputDecoration(hintText: l10n.initiativeValue),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("CANCELAR"),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -308,7 +310,7 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
               Navigator.pop(context);
               _saveSession();
             },
-            child: const Text("GUARDAR"),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -317,6 +319,7 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
 
   /// Diálogo para actualizar los puntos de vida de un participante.
   void _editHp(Participant p) {
+    final l10n = AppLocalizations.of(context)!;
     final hpController = TextEditingController(text: p.currentHp.toString());
     final tempHpController = TextEditingController(
       text: p.temporaryHp.toString(),
@@ -325,27 +328,27 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Gestión de Vida - ${p.name}"),
+        title: Text(l10n.hpManagement(p.name)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: hpController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: "Vida Actual"),
+              decoration: InputDecoration(labelText: l10n.currentHp),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: tempHpController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: "Vida Temporal"),
+              decoration: InputDecoration(labelText: l10n.tempHp),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("CANCELAR"),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -357,7 +360,7 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
               Navigator.pop(context);
               _saveSession();
             },
-            child: const Text("GUARDAR"),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -381,6 +384,7 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -394,12 +398,12 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
-                  title: const Text("Nombre del Combate"),
+                  title: Text(l10n.combatName),
                   content: TextField(controller: controller),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text("CANCELAR"),
+                      child: Text(l10n.cancel),
                     ),
                     ElevatedButton(
                       onPressed: () {
@@ -407,7 +411,7 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                         Navigator.pop(context);
                         _saveSession();
                       },
-                      child: const Text("GUARDAR"),
+                      child: Text(l10n.save),
                     ),
                   ],
                 ),
@@ -430,9 +434,9 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (!_session.isStarted) ...[
-                    const Text(
-                      "PREPARACIÓN",
-                      style: TextStyle(
+                    Text(
+                      l10n.preparationUpper,
+                      style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
@@ -443,11 +447,11 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                     ElevatedButton.icon(
                       onPressed: _showAddMonsterDialog,
                       icon: const Icon(Icons.add, size: 20),
-                      label: const FittedBox(
+                      label: FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
-                          "Añadir Criaturas",
-                          style: TextStyle(fontSize: 13),
+                          l10n.addCreatures,
+                          style: const TextStyle(fontSize: 13),
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
@@ -462,11 +466,11 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                     ElevatedButton.icon(
                       onPressed: _addPlayer,
                       icon: const Icon(Icons.person_add, size: 20),
-                      label: const FittedBox(
+                      label: FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
-                          "Añadir Jugadores",
-                          style: TextStyle(fontSize: 13),
+                          l10n.addPlayers,
+                          style: const TextStyle(fontSize: 13),
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
@@ -492,10 +496,10 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                               ),
                               elevation: 4,
                             ),
-                            child: const Text(
-                              "INI. MONSTRUOS",
+                            child: Text(
+                              l10n.rollMonsters,
                               textAlign: TextAlign.center,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -515,10 +519,10 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                               ),
                               elevation: 4,
                             ),
-                            child: const Text(
-                              "INI. JUGADORES",
+                            child: Text(
+                              l10n.rollPlayers,
                               textAlign: TextAlign.center,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -538,11 +542,11 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.all(16),
                       ),
-                      child: const FittedBox(
+                      child: FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
-                          "EMPEZAR COMBATE",
-                          style: TextStyle(
+                          l10n.startCombat,
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -560,7 +564,7 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                         child: Column(
                           children: [
                             Text(
-                              "RONDA ${_session.round}",
+                              l10n.roundUpper(_session.round),
                               style: TextStyle(
                                 fontSize: 28,
                                 fontWeight: FontWeight.bold,
@@ -570,7 +574,7 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                             const SizedBox(height: 8),
                             if (_session.participants.isNotEmpty)
                               Text(
-                                "Turno de: ${_session.participants[_session.turnIndex].name}",
+                                l10n.turnOf(_session.participants[_session.turnIndex].name),
                                 style: const TextStyle(
                                   fontSize: 18,
                                   fontStyle: FontStyle.italic,
@@ -585,11 +589,11 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                     ElevatedButton.icon(
                       onPressed: _nextTurn,
                       icon: const Icon(Icons.skip_next, size: 28),
-                      label: const FittedBox(
+                      label: FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
-                          "SIGUIENTE TURNO",
-                          style: TextStyle(fontSize: 16),
+                          l10n.nextTurnUpper,
+                          style: const TextStyle(fontSize: 16),
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
@@ -601,11 +605,11 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                     ElevatedButton.icon(
                       onPressed: _endCombat,
                       icon: const Icon(Icons.stop, size: 20),
-                      label: const FittedBox(
+                      label: FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
-                          "TERMINAR COMBATE",
-                          style: TextStyle(fontSize: 14),
+                          l10n.endCombat,
+                          style: const TextStyle(fontSize: 14),
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
@@ -737,9 +741,9 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                                       ),
                                       Text(
                                         p.isPlayer
-                                            ? "JUGADOR"
+                                            ? l10n.player
                                             : (p.monster?.type?.toUpperCase() ??
-                                                  "CRIATURA"),
+                                                  l10n.creature.toUpperCase()),
                                         style: TextStyle(
                                           fontSize: 10,
                                           fontWeight: FontWeight.bold,
@@ -865,6 +869,7 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
 
   /// Muestra el diálogo para añadir monstruos que están actualmente en la cola de batalla.
   void _showAddMonsterDialog() {
+    final l10n = AppLocalizations.of(context)!;
     final queuedMonsters = Provider.of<BattleQueueProvider>(
       context,
       listen: false,
@@ -873,13 +878,11 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Añadir desde la Cola"),
+        title: Text(l10n.addFromQueue),
         content: SizedBox(
           width: double.maxFinite,
           child: queuedMonsters.isEmpty
-              ? const Text(
-                  "La cola de batalla está vacía. Añade criaturas desde el Bestiario.",
-                )
+              ? Text(l10n.emptyQueueBestiary)
               : ListView.builder(
                   shrinkWrap: true,
                   itemCount: queuedMonsters.length,
@@ -897,7 +900,7 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                         ),
                         child: m.image == null ? Text(m.name?[0] ?? "?") : null,
                       ),
-                      title: Text(m.name ?? "Sin nombre"),
+                      title: Text(m.name ?? l10n.noName),
                       subtitle: Text("${m.size} ${m.type}"),
                       onTap: () {
                         _addMonsterToCombat(m);
@@ -910,7 +913,7 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("CERRAR"),
+            child: Text(l10n.close),
           ),
         ],
       ),

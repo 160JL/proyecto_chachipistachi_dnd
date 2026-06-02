@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'package:proyecto_chachipistachi_dnd/l10n/app_localizations.dart';
 import 'package:proyecto_chachipistachi_dnd/models/monster.dart';
 import 'package:proyecto_chachipistachi_dnd/service/connection_service.dart';
 import 'package:proyecto_chachipistachi_dnd/service/monster_storage_service.dart';
@@ -377,6 +378,7 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
     _dialogTotal = results.length;
 
     // Mostrar modal informativo con barra de progreso.
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -389,18 +391,18 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
                 : 0.0;
 
             return AlertDialog(
-              title: const Text('Construyendo Registro de Habilidades'),
+              title: Text(l10n.buildingRegistry),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'Sincronizando el bestiario local. Este proceso solo ocurre una vez.',
-                    style: TextStyle(fontSize: 13),
+                  Text(
+                    l10n.syncingBestiary,
+                    style: const TextStyle(fontSize: 13),
                   ),
                   const SizedBox(height: 20),
                   LinearProgressIndicator(value: percentage),
                   const SizedBox(height: 10),
-                  Text('$_dialogProgress / $_dialogTotal criaturas procesadas'),
+                  Text(l10n.creaturesProcessed(_dialogProgress, _dialogTotal)),
                 ],
               ),
             );
@@ -433,10 +435,11 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.isLocal ? 'Repositorio Local' : 'Bestiario API'),
+        title: Text(widget.isLocal ? l10n.localRepository : l10n.bestiaryApi),
         actions: [
           // Botón de actualización: ofrece opciones de limpieza de caché en modo API.
           TextButton.icon(
@@ -447,21 +450,19 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
                 showDialog(
                   context: context,
                   builder: (ctx) => AlertDialog(
-                    title: const Text("Actualizar Bestiario"),
-                    content: const Text(
-                      "¿Deseas actualizar la lista o reconstruir el registro de habilidades?",
-                    ),
+                    title: Text(l10n.updateBestiary),
+                    content: Text(l10n.updateBestiaryMessage),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(ctx),
-                        child: const Text("Cancelar"),
+                        child: Text(l10n.cancel),
                       ),
                       TextButton(
                         onPressed: () {
                           Navigator.pop(ctx);
                           _cargarDatos(forceRefresh: true);
                         },
-                        child: const Text("Solo lista"),
+                        child: Text(l10n.onlyList),
                       ),
                       ElevatedButton(
                         onPressed: () async {
@@ -469,7 +470,7 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
                           await MonsterAbilityRegistryService().clearRegistry();
                           _cargarDatos(forceRefresh: true);
                         },
-                        child: const Text("Todo"),
+                        child: Text(l10n.everything),
                       ),
                     ],
                   ),
@@ -477,9 +478,9 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
               }
             },
             icon: const Icon(Icons.refresh, color: Colors.white),
-            label: const Text(
-              "Actualizar",
-              style: TextStyle(
+            label: Text(
+              l10n.update,
+              style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
@@ -514,13 +515,14 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
   /// Construye la barra de búsqueda de nombre.
   /// Es un widget estático que ocupa espacio físico en el Column del body.
   Widget _buildSearchBarSection() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
       color: Theme.of(context).colorScheme.surface,
       child: TextField(
         controller: _searchController,
         decoration: InputDecoration(
-          labelText: 'Buscar por nombre...',
+          labelText: l10n.searchByName,
           prefixIcon: const Icon(Icons.search),
           border: const OutlineInputBorder(),
           fillColor: Theme.of(context).colorScheme.surface,
@@ -531,7 +533,7 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
               _cargarDatos();
             },
             icon: const Icon(Icons.clear, size: 20),
-            label: const Text("LIMPIAR", style: TextStyle(fontSize: 12)),
+            label: Text(l10n.clear, style: const TextStyle(fontSize: 12)),
           ),
         ),
         onChanged: (_) => widget.isLocal ? _cargarDatos() : null,
@@ -544,6 +546,7 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
   /// Construye el panel desplegable de filtros avanzados como un Overlay.
   /// Se posiciona sobre la lista y ajusta su altura si el teclado está visible.
   Widget _buildAdvancedFiltersOverlay() {
+    final l10n = AppLocalizations.of(context)!;
     return Positioned(
       top: 0,
       left: 0,
@@ -561,7 +564,7 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
         ),
         child: ExpansionTile(
           title: Text(
-            "Filtros Avanzados",
+            l10n.advancedFilters,
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: Theme.of(context).colorScheme.primary,
@@ -595,7 +598,7 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
                           children: [
                             Expanded(
                               child: _buildDropdown(
-                                "Tipo",
+                                l10n.type,
                                 _selectedType,
                                 _types,
                                 (v) => setState(() => _selectedType = v!),
@@ -604,7 +607,7 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: _buildDropdown(
-                                "Tamaño",
+                                l10n.size,
                                 _selectedSize,
                                 _sizes,
                                 (v) => setState(() => _selectedSize = v!),
@@ -617,7 +620,7 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
                           children: [
                             Expanded(
                               child: _buildDropdown(
-                                "Alineamiento",
+                                l10n.alignment,
                                 _selectedAlign,
                                 _alignments,
                                 (v) => setState(() => _selectedAlign = v!),
@@ -626,7 +629,7 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: _buildDropdown(
-                                "CR",
+                                l10n.cr,
                                 _selectedCR,
                                 _crs,
                                 (v) => setState(() => _selectedCR = v!),
@@ -636,27 +639,27 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
                         ),
                         const SizedBox(height: 8),
                         _buildDropdown(
-                          "Ordenar por",
+                          l10n.sortBy,
                           _sortBy,
                           _sortOptions,
                           (v) => setState(() => _sortBy = v!),
                         ),
                         const SizedBox(height: 12),
-                        _sectionTitle("Vulnerabilidades"),
+                        _sectionTitle(l10n.vulnerabilities),
                         _buildMultiSelectChips(
                           _damageTypes,
                           _selectedVulns,
                           (list) => setState(() => _selectedVulns = list),
                         ),
                         const SizedBox(height: 8),
-                        _sectionTitle("Resistencias"),
+                        _sectionTitle(l10n.resistances),
                         _buildMultiSelectChips(
                           _damageTypes,
                           _selectedRes,
                           (list) => setState(() => _selectedRes = list),
                         ),
                         const SizedBox(height: 8),
-                        _sectionTitle("Inmunidades"),
+                        _sectionTitle(l10n.immunities),
                         _buildMultiSelectChips(
                           _damageTypes,
                           _selectedImms,
@@ -675,7 +678,7 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
                                 context,
                               ).colorScheme.onPrimary,
                             ),
-                            child: const Text("APLICAR FILTROS"),
+                            child: Text(l10n.applyFilters),
                           ),
                         ),
                         const SizedBox(height: 10),
@@ -703,6 +706,7 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
 
   /// Construye la lista de monstruos utilizando un FutureBuilder.
   Widget _buildMonsterListSection() {
+    final l10n = AppLocalizations.of(context)!;
     return FutureBuilder<dynamic>(
       future: _futureData,
       builder: (context, snapshot) {
@@ -717,7 +721,7 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
             ? snapshot.data
             : (snapshot.data as MonsterList).results ?? [];
         if (results.isEmpty) {
-          return const Center(child: Text("No se encontraron criaturas."));
+          return Center(child: Text(l10n.noCreaturesFound));
         }
 
         return ListView.builder(
@@ -933,6 +937,7 @@ class _MonsterSubtitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return FutureBuilder<Monster>(
       future: ConnectionService().fetchMonsterDetail(url),
       builder: (context, snapshot) {
@@ -943,9 +948,9 @@ class _MonsterSubtitle extends StatelessWidget {
             style: const TextStyle(fontSize: 12),
           );
         }
-        return const Text(
-          "Cargando...",
-          style: TextStyle(fontSize: 12, color: Colors.grey),
+        return Text(
+          l10n.loading,
+          style: const TextStyle(fontSize: 12, color: Colors.grey),
         );
       },
     );

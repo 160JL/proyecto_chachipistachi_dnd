@@ -1,0 +1,268 @@
+{
+  "appTitle": "Asistente DnD",
+  "battleSimulation": "Simulación de batalla",
+  "initiativeTracker": "Iniciativa (Tracker)",
+  "createNewCreature": "Crear Criatura Nueva",
+  "consultBestiary": "Consultar Bestiario (API)",
+  "mySavedCreatures": "Mis Criaturas Guardadas",
+  "changelogTitle": "Registro de Cambios (Changelog)",
+  "version": "Versión",
+  "close": "CERRAR",
+  "preparation": "Preparación",
+  "round": "Ronda",
+  "start": "INICIAR",
+  "rollDice": "Lanzar Dados",
+  "configureBoard": "Configurar Tablero",
+  "addCreature": "Añadir Criatura",
+  "nextTurn": "Siguiente Turno",
+  "turnOf": "TURNO DE: {name}",
+  "@turnOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "movement": "MOVIMIENTO:",
+  "cells": "casillas",
+  "redoMovement": "Rehacer movimiento",
+  "actions": "ACCIONES:",
+  "reactions": "REACCIONES:",
+  "legendaryActions": "ACCIONES LEGENDARIAS:",
+  "quantity": "Cantidad:",
+  "roll": "Tirada:",
+  "results": "Resultados:",
+  "total": "Total:",
+  "boardSize": "Tamaño del Tablero",
+  "grid": "Cuadrícula:",
+  "gridAutoAdjust": "El tamaño de las casillas se ajustará automáticamente.",
+  "cancel": "CANCELAR",
+  "save": "GUARDAR",
+  "addToCombat": "Añadir al combate",
+  "emptyQueueMessage": "La cola de batalla está vacía. Añade criaturas desde el Bestiario o Mis Criaturas primero.",
+  "battleQueue": "COLA DE BATALLA",
+  "clearQueue": "LIMPIAR COLA",
+  "noName": "Sin nombre",
+  "hitPoints": "PUNTOS DE VIDA",
+  "initiative": "Iniciativa",
+  "removeFromBattle": "Eliminar de la batalla",
+  "localRepository": "Repositorio Local",
+  "bestiaryApi": "Bestiario API",
+  "updateBestiary": "Actualizar Bestiario",
+  "updateBestiaryMessage": "¿Deseas actualizar la lista o reconstruir el registro de habilidades?",
+  "onlyList": "Solo lista",
+  "everything": "Todo",
+  "update": "Actualizar",
+  "searchByName": "Buscar por nombre...",
+  "clear": "LIMPIAR",
+  "advancedFilters": "Filtros Avanzados",
+  "type": "Tipo",
+  "size": "Tamaño",
+  "alignment": "Alineamiento",
+  "cr": "CR",
+  "sortBy": "Ordenar por",
+  "vulnerabilities": "Vulnerabilidades",
+  "resistances": "Resistencias",
+  "immunities": "Inmunidades",
+  "applyFilters": "APLICAR FILTROS",
+  "nameAsc": "Nombre (A-Z)",
+  "nameDesc": "Nombre (Z-A)",
+  "crAsc": "CR (Bajo-Alto)",
+  "crDesc": "CR (Alto-Bajo)",
+  "loading": "Cargando...",
+  "noCreaturesFound": "No se encontraron criaturas.",
+  "buildingRegistry": "Construyendo Registro de Habilidades",
+  "syncingBestiary": "Sincronizando el bestiario local. Este proceso solo ocurre una vez.",
+  "creaturesProcessed": "{current} / {total} criaturas procesadas",
+  "@creaturesProcessed": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "all": "Todos",
+  "image": "Imagen",
+  "imageUrlOrPath": "URL de imagen o ruta local",
+  "gallery": "GALERÍA",
+  "basicData": "Datos Básicos",
+  "name": "Nombre",
+  "nameRequired": "El nombre es obligatorio",
+  "hp": "HP",
+  "acValue": "AC (Valor)",
+  "acType": "Tipo de AC (ej: natural, armor)",
+  "hitDice": "Hit Dice",
+  "hpRoll": "HP Roll",
+  "speed": "Velocidad",
+  "walk": "Walk",
+  "fly": "Fly",
+  "swim": "Swim",
+  "attributes": "Atributos",
+  "str": "Fuerza (STR)",
+  "dex": "Destreza (DEX)",
+  "con": "Constitución (CON)",
+  "intel": "Inteligencia (INT)",
+  "wis": "Sabiduría (WIS)",
+  "cha": "Carisma (CHA)",
+  "challengeAndXp": "Desafío y XP",
+  "profBonus": "Prof. Bonus",
+  "senses": "Sentidos",
+  "blindsight": "Blindsight",
+  "darkvision": "Darkvision",
+  "tremorsense": "Tremorsense",
+  "truesight": "Truesight",
+  "passivePerception": "Passive Perception",
+  "other": "Otros",
+  "languages": "Idiomas",
+  "specialAbilities": "Habilidades Especiales",
+  "saveCreature": "GUARDAR CRIATURA",
+  "importFromJson": "Importar desde JSON",
+  "jsonHint": "Pega el JSON completo de la criatura aquí",
+  "import": "Importar",
+  "jsonError": "Error en el formato JSON: {error}",
+  "@jsonError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "creatureUpdated": "Criatura actualizada con éxito",
+  "creatureSaved": "Criatura guardada con éxito",
+  "editCreature": "Editar: {name}",
+  "@editCreature": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "useAsBase": "Usar como base: {name}",
+  "@useAsBase": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "random": "Aleatorio",
+  "importJson": "Importar Json",
+  "add": "AÑADIR",
+  "delete": "BORRAR",
+  "editItem": "Editar {item}",
+  "@editItem": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      }
+    }
+  },
+  "typeToSeeSuggestions": "Escribe para ver sugerencias...",
+  "description": "Descripción",
+  "emptyRegistry": "Registro Vacío",
+  "emptyRegistryMessage": "No hay habilidades guardadas en el registro local. Es necesario consultar criaturas del bestiario (API) para llenar el registro antes de poder generar una criatura aleatoria.",
+  "goToApi": "Ir a la API",
+  "randomGenerator": "Generador Aleatorio",
+  "targetCr": "CR Objetivo",
+  "generate": "Generar",
+  "randomCreatureGenerated": "Generada criatura aleatoria CR {cr}",
+  "@randomCreatureGenerated": {
+    "placeholders": {
+      "cr": {
+        "type": "num"
+      }
+    }
+  },
+  "combatManagement": "Gestión de Combates",
+  "newCombat": "Nuevo Combate",
+  "noSavedCombats": "No hay combates guardados",
+  "newCombatUpper": "NUEVO COMBATE",
+  "lastChange": "Último cambio: {date}",
+  "@lastChange": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "participantsCount": "Participantes: {count}",
+  "@participantsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "roundCount": "Ronda: {round}",
+  "@roundCount": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteCombat": "Eliminar Combate",
+  "confirmDeleteCombat": "¿Estás seguro de que quieres eliminar '{name}'?",
+  "@confirmDeleteCombat": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteUpper": "ELIMINAR",
+  "creature": "Criatura",
+  "deleteParticipant": "Eliminar Participante",
+  "confirmDeleteParticipant": "¿Estás seguro de que quieres eliminar a {name} del combate?",
+  "@confirmDeleteParticipant": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addPlayer": "Añadir Jugador",
+  "initiativeBonus": "Bono Iniciativa",
+  "editInitiative": "Editar Iniciativa - {name}",
+  "@editInitiative": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "initiativeValue": "Valor de iniciativa",
+  "hpManagement": "Gestión de Vida - {name}",
+  "@hpManagement": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "currentHp": "Vida Actual",
+  "tempHp": "Vida Temporal",
+  "combatName": "Nombre del Combate",
+  "preparationUpper": "PREPARACIÓN",
+  "addCreatures": "Añadir Criaturas",
+  "addPlayers": "Añadir Jugadores",
+  "rollMonsters": "INI. MONSTRUOS",
+  "rollPlayers": "INI. JUGADORES",
+  "startCombat": "EMPEZAR COMBATE",
+  "roundUpper": "RONDA {round}",
+  "@roundUpper": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "nextTurnUpper": "SIGUIENTE TURNO",
+  "endCombat": "TERMINAR COMBATE",
+  "player": "JUGADOR",
+  "addFromQueue": "Añadir desde la Cola",
+  "emptyQueueBestiary": "La cola de batalla está vacía. Añade criaturas desde el Bestiario."
+}

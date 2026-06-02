@@ -1,11 +1,11 @@
 {
-    "name": "Compañero DnD",
-    "short_name": "Compañero DnD",
+    "name": "Asistente DnD",
+    "short_name": "Asistente DnD",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "Compañero DnD - Proyecto fin de curso",
+    "description": "Asistente DnD - Proyecto fin de curso",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

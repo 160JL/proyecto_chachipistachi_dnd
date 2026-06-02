@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:proyecto_chachipistachi_dnd/l10n/app_localizations.dart';
 import 'package:proyecto_chachipistachi_dnd/models/changelog.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/battle_screen.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/monster_list_screen.dart';
@@ -28,7 +30,17 @@ class MyApp extends StatelessWidget {
     const goldOrange = Color(0xFFE69A28);
 
     return MaterialApp(
-      title: 'Compañero DnD',
+      onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('es'),
+        Locale('en'),
+      ],
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
@@ -139,28 +151,22 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final String _title = "Compañero DnD";
-  String _version = "";
+  String _version = appChangelogES.isNotEmpty ? appChangelogES.first.version : "";
 
   @override
   void initState() {
     super.initState();
-    _loadVersion();
   }
 
-  Future<void> _loadVersion() async {
-    final PackageInfo packageInfo = await PackageInfo.fromPlatform();
-    setState(() {
-      _version = packageInfo.version;
-    });
-  }
+  // Eliminamos _loadVersion ya que usaremos el changelog directamente
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(_title),
+        title: Text(l10n.appTitle),
       ),
       body: Stack(
         children: [
@@ -172,31 +178,31 @@ class _MyHomePageState extends State<MyHomePage> {
                   // Botones de acceso a las distintas secciones con etiquetas claras.
                   _buildMenuButton(
                     context,
-                    "Simulación de batalla",
+                    l10n.battleSimulation,
                     Icons.grid_on,
                     "/battlescreen",
                   ),
                   _buildMenuButton(
                     context,
-                    "Iniciativa (Tracker)",
+                    l10n.initiativeTracker,
                     Icons.list_alt,
                     "/initiative",
                   ),
                   _buildMenuButton(
                     context,
-                    "Crear Criatura Nueva",
+                    l10n.createNewCreature,
                     Icons.add_circle_outline,
                     "/create",
                   ),
                   _buildMenuButton(
                     context,
-                    "Consultar Bestiario (API)",
+                    l10n.consultBestiary,
                     Icons.public,
                     "/api",
                   ),
                   _buildMenuButton(
                     context,
-                    "Mis Criaturas Guardadas",
+                    l10n.mySavedCreatures,
                     Icons.storage,
                     "/repository",
                   ),
@@ -237,22 +243,26 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _showChangelog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final isEn = Localizations.localeOf(context).languageCode == 'en';
+    final changelog = isEn ? appChangelogEN : appChangelogES;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Registro de Cambios (Changelog)"),
+        title: Text(l10n.changelogTitle),
         content: SizedBox(
           width: double.maxFinite,
           child: ListView.builder(
             shrinkWrap: true,
-            itemCount: appChangelog.length,
+            itemCount: changelog.length,
             itemBuilder: (context, index) {
-              final entry = appChangelog[index];
+              final entry = changelog[index];
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Versión ${entry.version} (${entry.date})",
+                    "${l10n.version} ${entry.version} (${entry.date})",
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -278,7 +288,7 @@ class _MyHomePageState extends State<MyHomePage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("CERRAR"),
+            child: Text(l10n.close),
           ),
         ],
       ),

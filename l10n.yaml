@@ -1,0 +1,6 @@
+arb-dir: lib/l10n
+template-arb-file: app_es.arb
+output-localization-file: app_localizations.dart
+# synthetic-package: false is implied if it's no longer supported as true?
+# Or maybe I should specify output-dir.
+output-dir: lib/l10n
