@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1060403066444",
+    "project_id": "asistente-dnd",
+    "storage_bucket": "asistente-dnd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1060403066444:android:7f17021671c52b4ef826e9",
+        "android_client_info": {
+          "package_name": "com.example.proyecto_chachipistachi_dnd"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1060403066444-l97lbkntktv4brfijr8d3pfk9l40rdrl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCHh_OOPRTorZIPGu0N7nxevSyumKweo8A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1060403066444-l97lbkntktv4brfijr8d3pfk9l40rdrl.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

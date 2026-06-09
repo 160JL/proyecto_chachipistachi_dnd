@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'dart:io';
-import 'package:provider/provider.dart';
 import 'package:proyecto_chachipistachi_dnd/l10n/app_localizations.dart';
 import '../models/monster.dart';
 import '../models/combat.dart';
-import '../providers/battle_queue_provider.dart';
 import '../service/combat_storage_service.dart';
 import 'monster_detail_screen.dart';
+import 'package:proyecto_chachipistachi_dnd/pantallas/widgets/unified_add_monster_dialog.dart';
 
 /// Pantalla de seguimiento de iniciativa (Initiative Tracker).
 /// Permite gestionar el orden de turnos, la vida de los participantes y el estado del combate.
@@ -387,7 +386,6 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(_session.name),
         actions: [
           // Botón para renombrar el combate actual.
@@ -428,12 +426,14 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
           // Se adapta automáticamente al espacio disponible.
           final Widget controlsWidget = Expanded(
             flex: 1,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (!_session.isStarted) ...[
+            child: Scrollbar(
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (!_session.isStarted) ...[
                     Text(
                       l10n.preparationUpper,
                       style: const TextStyle(
@@ -443,22 +443,16 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 20),
-                    // Botón para añadir criaturas desde la cola.
+                    // Botón para añadir criaturas (Unificado).
                     ElevatedButton.icon(
                       onPressed: _showAddMonsterDialog,
-                      icon: const Icon(Icons.add, size: 20),
-                      label: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          l10n.addCreatures,
-                          style: const TextStyle(fontSize: 13),
-                        ),
+                      icon: const Icon(Icons.group_add, size: 20),
+                      label: Text(
+                        l10n.addCreatures,
+                        style: const TextStyle(fontSize: 13),
                       ),
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 12,
-                          horizontal: 8,
-                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -622,7 +616,7 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                 ],
               ),
             ),
-          );
+          ),);
 
           // Definimos el widget de la lista de iniciativa (el tracker).
           final Widget listWidget = Expanded(
@@ -752,6 +746,15 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                                               : Colors.red.shade700,
                                         ),
                                       ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        "${l10n.initiativeBonusLabel}: ${p.initiativeBonus >= 0 ? '+' : ''}${p.initiativeBonus}",
+                                        style: const TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.grey,
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -867,56 +870,11 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
     );
   }
 
-  /// Muestra el diálogo para añadir monstruos que están actualmente en la cola de batalla.
+  /// Muestra el diálogo unificado para añadir monstruos.
   void _showAddMonsterDialog() {
-    final l10n = AppLocalizations.of(context)!;
-    final queuedMonsters = Provider.of<BattleQueueProvider>(
-      context,
-      listen: false,
-    ).queue;
-
-    showDialog(
+    showUnifiedAddMonsterDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.addFromQueue),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: queuedMonsters.isEmpty
-              ? Text(l10n.emptyQueueBestiary)
-              : ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: queuedMonsters.length,
-                  itemBuilder: (context, index) {
-                    final m = queuedMonsters[index];
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage: _getParticipantImage(
-                          Participant(
-                            id: "",
-                            name: "",
-                            image: m.image,
-                            monster: m,
-                          ),
-                        ),
-                        child: m.image == null ? Text(m.name?[0] ?? "?") : null,
-                      ),
-                      title: Text(m.name ?? l10n.noName),
-                      subtitle: Text("${m.size} ${m.type}"),
-                      onTap: () {
-                        _addMonsterToCombat(m);
-                        Navigator.pop(context);
-                      },
-                    );
-                  },
-                ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.close),
-          ),
-        ],
-      ),
+      onMonsterSelected: (m) => _addMonsterToCombat(m),
     );
   }
 }

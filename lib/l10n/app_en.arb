@@ -1,5 +1,6 @@
 {
   "appTitle": "DnD Companion",
+  "mainMenu": "MAIN MENU",
   "battleSimulation": "Battle Simulation",
   "initiativeTracker": "Initiative Tracker",
   "createNewCreature": "Create New Creature",
@@ -264,5 +265,47 @@
   "endCombat": "END COMBAT",
   "player": "PLAYER",
   "addFromQueue": "Add from Queue",
-  "emptyQueueBestiary": "The battle queue is empty. Add creatures from the Bestiary."
+  "emptyQueueBestiary": "The battle queue is empty. Add creatures from the Bestiary.",
+  "login": "Login",
+  "logout": "Logout",
+  "email": "Email",
+  "password": "Password",
+  "signIn": "SIGN IN",
+  "signUp": "SIGN UP",
+  "loginError": "Login error",
+  "noAccount": "Don't have an account? Sign up",
+  "haveAccount": "Already have an account? Login",
+  "welcome": "Welcome, {name}",
+  "signInWithGoogle": "Sign in with Google",
+  "sharePublicly": "Share Publicly",
+  "publicBestiary": "Public Bestiary",
+  "sharedBy": "Shared by: {name}",
+  "@sharedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "download": "DOWNLOAD",
+  "creatureShared": "Creature shared in Public Bestiary",
+  "creatureAddedToBattle": "{name} added to battle",
+  "@creatureAddedToBattle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "alreadyShared": "This creature is already public",
+  "noPublicCreatures": "No shared creatures yet",
+  "keepLoggedIn": "Keep me logged in",
+  "signInAsGuest": "SIGN IN AS GUEST",
+  "saveToMyBestiary": "Add to my bestiary",
+  "initiativeBonusLabel": "Ini Bonus",
+  "adSpace": "ADVERTISING SPACE",
+  "statBlockLabel": "D&D 5e Stat Block",
+  "exportJson": "Export as JSON",
+  "exportPng": "Export as PNG",
+  "addToBattle": "Add to Battle"
 }

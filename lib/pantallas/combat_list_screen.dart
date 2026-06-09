@@ -69,7 +69,6 @@ class _CombatListScreenState extends State<CombatListScreen> {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(l10n.combatManagement),
       ),
       body: _isLoading

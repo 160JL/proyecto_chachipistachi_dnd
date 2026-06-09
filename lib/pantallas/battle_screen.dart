@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:math';
-import 'package:provider/provider.dart';
 import 'package:proyecto_chachipistachi_dnd/l10n/app_localizations.dart';
 import 'package:proyecto_chachipistachi_dnd/models/monster.dart';
-import 'package:proyecto_chachipistachi_dnd/providers/battle_queue_provider.dart';
 
 import 'package:proyecto_chachipistachi_dnd/pantallas/monster_detail_screen.dart';
+import 'package:proyecto_chachipistachi_dnd/pantallas/widgets/unified_add_monster_dialog.dart';
 
 /// Representa a un individuo o criatura específica presente en el campo de batalla.
 /// Mantiene el estado dinámico del combate como vida actual, posición y su iniciativa.
@@ -200,100 +199,199 @@ class _BattleScreenState extends State<BattleScreen> {
     // La interfaz se divide en un AppBar con controles globales y el cuerpo principal adaptativo.
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(
           !_isCombatStarted
-              ? "${l10n.preparation} ($_gridCount x $_gridCount)"
-              : "${l10n.round} $_round - ${_combatants[_turnIndex].monster.name}",
+              ? l10n.preparation
+              : l10n.battleSimulation,
         ),
         actions: [
-          // Botón para iniciar el combate si aún no ha empezado
-          if (!_isCombatStarted && _combatants.isNotEmpty)
-            TextButton.icon(
-              onPressed: _startCombat,
-              icon: const Icon(Icons.play_arrow, color: Colors.white),
-              label: Text(
-                l10n.start,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
           // Botón para tirar dados
           IconButton(
             icon: const Icon(Icons.casino),
             onPressed: _showDiceRollingDialog,
             tooltip: l10n.rollDice,
           ),
-          // Configuración de las dimensiones de la cuadrícula
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: _showSettingsDialog,
-            tooltip: l10n.configureBoard,
-          ),
-          // Acceso a la cola para añadir nuevas criaturas al campo
-          IconButton(
-            icon: const Icon(Icons.person_add),
-            onPressed: _showAddMonsterDialog,
-            tooltip: l10n.addCreature,
-          ),
-          // Avance manual de turnos
-          IconButton(
-            icon: const Icon(Icons.skip_next),
-            onPressed: _isCombatStarted && _combatants.isNotEmpty
-                ? _nextTurn
-                : null,
-            tooltip: l10n.nextTurn,
+          // Avance manual de turnos (visible siempre que haya combate)
+          if (_isCombatStarted && _combatants.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.skip_next),
+              onPressed: _nextTurn,
+              tooltip: l10n.nextTurn,
+            ),
+          // Botón para abrir el menú lateral
+          Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () => Scaffold.of(context).openEndDrawer(),
+              tooltip: "Menú",
+            ),
           ),
         ],
       ),
+      endDrawer: Drawer(
+        child: Column(
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              child: Center(
+                child: Text(
+                  l10n.battleSimulation.toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            if (!_isCombatStarted) ...[
+              // Opciones de Preparación
+              ListTile(
+                leading: const Icon(Icons.play_arrow, color: Colors.green),
+                title: Text(l10n.start),
+                onTap: _combatants.isNotEmpty
+                    ? () {
+                        Navigator.pop(context);
+                        _startCombat();
+                      }
+                    : null,
+                enabled: _combatants.isNotEmpty,
+              ),
+              const Divider(),
+            ],
+            ListTile(
+              leading: const Icon(Icons.person_add, color: Colors.blue),
+              title: Text(l10n.addCreature),
+              onTap: () {
+                Navigator.pop(context);
+                _showAddMonsterDialog();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings, color: Colors.grey),
+              title: Text(l10n.configureBoard),
+              onTap: () {
+                Navigator.pop(context);
+                _showSettingsDialog();
+              },
+            ),
+            if (_isCombatStarted) ...[
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.stop, color: Colors.red),
+                title: Text(l10n.endCombat),
+                onTap: () {
+                  setState(() {
+                    _isCombatStarted = false;
+                    _combatants.clear();
+                    _round = 1;
+                    _turnIndex = 0;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ],
+        ),
+      ),
       body: SafeArea(
-        child: OrientationBuilder(
-          builder: (context, orientation) {
-            // Si la pantalla está en horizontal, usamos un diseño de filas (Tablero | Menús)
-            if (orientation == Orientation.landscape) {
-              return Row(
-                children: [
-                  // Lado izquierdo: Tablero táctico (toma el espacio restante)
-                  Expanded(flex: 3, child: _buildBoardArea()),
-                  // Lado derecho: Menús de información y lista de iniciativa
-                  Container(
-                    width: 320,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      border: Border(
-                        left: BorderSide(color: Theme.of(context).dividerColor),
+        child: Column(
+          children: [
+            // Barra de información de Ronda y Turno debajo del AppBar
+            if (_isCombatStarted && _combatants.isNotEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "${l10n.round} $_round",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
-                    child: Column(
-                      children: [
-                        // Panel de detalles del combatiente activo
-                        if (_isCombatStarted && _combatants.isNotEmpty)
-                          _buildActiveCreatureDetails(isLandscape: true),
-                        const Divider(height: 1),
-                        // Lista de iniciativa vertical en modo horizontal
-                        Expanded(child: _buildInitiativeBar(isVertical: true)),
-                      ],
+                    Expanded(
+                      child: Text(
+                        _combatants[_turnIndex].monster.name ?? l10n.noName,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                ],
-              );
-            } else {
-              // Si la pantalla está en vertical, mantenemos el diseño original de columnas
-              return Column(
-                children: [
-                  // Área principal del tablero
-                  Expanded(child: _buildBoardArea()),
-                  // Panel informativo inferior
-                  if (_isCombatStarted && _combatants.isNotEmpty)
-                    _buildActiveCreatureDetails(),
-                  // Barra de iniciativa horizontal
-                  _buildInitiativeBar(),
-                ],
-              );
-            }
-          },
+                    Text(
+                      "Ini: ${_combatants[_turnIndex].initiative}",
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              )
+            else if (!_isCombatStarted)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                color: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.3),
+                child: Text(
+                  "${l10n.preparation}: $_gridCount x $_gridCount",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            Expanded(
+              child: OrientationBuilder(
+                builder: (context, orientation) {
+                  // Si la pantalla está en horizontal, usamos un diseño de filas (Tablero | Menús)
+                  if (orientation == Orientation.landscape) {
+                    return Row(
+                      children: [
+                        // Lado izquierdo: Tablero táctico (toma el espacio restante)
+                        Expanded(flex: 3, child: _buildBoardArea()),
+                        // Lado derecho: Menús de información y lista de iniciativa
+                        Container(
+                          width: 320,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surface,
+                            border: Border(
+                              left: BorderSide(color: Theme.of(context).dividerColor),
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              // Panel de detalles del combatiente activo
+                              if (_isCombatStarted && _combatants.isNotEmpty)
+                                _buildActiveCreatureDetails(isLandscape: true),
+                              const Divider(height: 1),
+                              // Lista de iniciativa vertical en modo horizontal
+                              Expanded(child: _buildInitiativeBar(isVertical: true)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  } else {
+                    // Si la pantalla está en vertical, mantenemos el diseño original de columnas
+                    return Column(
+                      children: [
+                        // Área principal del tablero
+                        Expanded(child: _buildBoardArea()),
+                        // Panel informativo inferior
+                        if (_isCombatStarted && _combatants.isNotEmpty)
+                          _buildActiveCreatureDetails(),
+                        // Barra de iniciativa horizontal
+                        _buildInitiativeBar(),
+                      ],
+                    );
+                  }
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -854,90 +952,9 @@ class _BattleScreenState extends State<BattleScreen> {
 
   /// Muestra el listado de criaturas en cola para poder añadirlas al combate activo.
   void _showAddMonsterDialog() {
-    final l10n = AppLocalizations.of(context)!;
-    final battleQueue = Provider.of<BattleQueueProvider>(
-      context,
-      listen: false,
-    );
-    final queuedMonsters = battleQueue.queue;
-
-    showDialog(
+    showUnifiedAddMonsterDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.addToCombat),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (queuedMonsters.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Text(
-                      l10n.emptyQueueMessage,
-                      textAlign: TextAlign.center,
-                    ),
-                  )
-                else ...[
-                  Text(
-                    l10n.battleQueue,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  ...queuedMonsters.asMap().entries.map((entry) {
-                    final m = entry.value;
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage: _getMonsterImage(m),
-                      ),
-                      title: Text(m.name ?? l10n.noName),
-                      subtitle: Text("${m.size} ${m.type}"),
-                      trailing: IconButton(
-                        icon: const Icon(
-                          Icons.close,
-                          size: 20,
-                          color: Colors.redAccent,
-                        ),
-                        onPressed: () {
-                          // Permite quitar un monstruo de la cola sin añadirlo a la batalla
-                          battleQueue.removeFromQueue(entry.key);
-                          Navigator.pop(context);
-                          _showAddMonsterDialog(); // Refrescamos el diálogo para ver el cambio
-                        },
-                      ),
-                      onTap: () {
-                        // Añade el monstruo seleccionado al campo de batalla
-                        _addMonsterToBattle(m);
-                        Navigator.pop(context);
-                      },
-                    );
-                  }),
-                ],
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          if (queuedMonsters.isNotEmpty)
-            TextButton(
-              onPressed: () {
-                battleQueue.clearQueue();
-                Navigator.pop(context);
-                _showAddMonsterDialog();
-              },
-              child: Text(
-                l10n.clearQueue,
-                style: const TextStyle(color: Colors.red),
-              ),
-            ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.close),
-          ),
-        ],
-      ),
+      onMonsterSelected: (m) => _addMonsterToBattle(m),
     );
   }
 

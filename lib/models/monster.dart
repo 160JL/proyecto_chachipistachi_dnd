@@ -26,6 +26,7 @@ class MonsterList {
 /// Diseñado para ser compatible tanto con la API oficial como con la creación local del usuario.
 class Monster {
   String? index; // Identificador único (slug).
+  String? localId; // ID único para almacenamiento en Firestore/Local.
   String? name; // Nombre de la criatura.
   String? size; // Tamaño (Tiny, Large, etc.).
   String? type; // Tipo (Beast, Dragon, etc.).
@@ -63,6 +64,7 @@ class Monster {
 
   Monster({
     this.index,
+    this.localId,
     this.name,
     this.size,
     this.type,
@@ -100,6 +102,7 @@ class Monster {
   factory Monster.fromJson(Map<String, dynamic> json) {
     return Monster(
       index: json['index'],
+      localId: json['localId'],
       name: json['name'],
       size: json['size'],
       type: json['type'],
@@ -152,6 +155,7 @@ class Monster {
   Map<String, dynamic> toJson() {
     return {
       'index': index,
+      'localId': localId,
       'name': name,
       'size': size,
       'type': type,

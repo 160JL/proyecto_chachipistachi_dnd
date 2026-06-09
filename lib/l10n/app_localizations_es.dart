@@ -12,6 +12,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get appTitle => 'Asistente DnD';
 
   @override
+  String get mainMenu => 'MENÚ PRINCIPAL';
+
+  @override
   String get battleSimulation => 'Simulación de batalla';
 
   @override
@@ -517,4 +520,94 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get emptyQueueBestiary =>
       'La cola de batalla está vacía. Añade criaturas desde el Bestiario.';
+
+  @override
+  String get login => 'Iniciar Sesión';
+
+  @override
+  String get logout => 'Cerrar Sesión';
+
+  @override
+  String get email => 'Correo Electrónico';
+
+  @override
+  String get password => 'Contraseña';
+
+  @override
+  String get signIn => 'ENTRAR';
+
+  @override
+  String get signUp => 'REGISTRARSE';
+
+  @override
+  String get loginError => 'Error al iniciar sesión';
+
+  @override
+  String get noAccount => '¿No tienes cuenta? Regístrate';
+
+  @override
+  String get haveAccount => '¿Ya tienes cuenta? Inicia sesión';
+
+  @override
+  String welcome(Object name) {
+    return 'Bienvenido, $name';
+  }
+
+  @override
+  String get signInWithGoogle => 'Iniciar sesión con Google';
+
+  @override
+  String get sharePublicly => 'Compartir públicamente';
+
+  @override
+  String get publicBestiary => 'Bestiario Público';
+
+  @override
+  String sharedBy(String name) {
+    return 'Compartido por: $name';
+  }
+
+  @override
+  String get download => 'DESCARGAR';
+
+  @override
+  String get creatureShared => 'Criatura compartida en el Bestiario Público';
+
+  @override
+  String creatureAddedToBattle(String name) {
+    return '$name añadido a batalla';
+  }
+
+  @override
+  String get alreadyShared => 'Esta criatura ya es pública';
+
+  @override
+  String get noPublicCreatures => 'No hay criaturas compartidas todavía';
+
+  @override
+  String get keepLoggedIn => 'Mantener la sesión iniciada';
+
+  @override
+  String get signInAsGuest => 'ACCEDER COMO INVITADO';
+
+  @override
+  String get saveToMyBestiary => 'Añadir a mis criaturas';
+
+  @override
+  String get initiativeBonusLabel => 'Bono Ini';
+
+  @override
+  String get adSpace => 'ESPACIO PARA PUBLICIDAD';
+
+  @override
+  String get statBlockLabel => 'Ficha de estadísticas D&D 5e';
+
+  @override
+  String get exportJson => 'Exportar como JSON';
+
+  @override
+  String get exportPng => 'Exportar como PNG';
+
+  @override
+  String get addToBattle => 'Añadir a Batalla';
 }

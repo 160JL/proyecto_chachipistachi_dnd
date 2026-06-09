@@ -1,5 +1,6 @@
 {
   "appTitle": "Asistente DnD",
+  "mainMenu": "MENÚ PRINCIPAL",
   "battleSimulation": "Simulación de batalla",
   "initiativeTracker": "Iniciativa (Tracker)",
   "createNewCreature": "Crear Criatura Nueva",
@@ -264,5 +265,47 @@
   "endCombat": "TERMINAR COMBATE",
   "player": "JUGADOR",
   "addFromQueue": "Añadir desde la Cola",
-  "emptyQueueBestiary": "La cola de batalla está vacía. Añade criaturas desde el Bestiario."
+  "emptyQueueBestiary": "La cola de batalla está vacía. Añade criaturas desde el Bestiario.",
+  "login": "Iniciar Sesión",
+  "logout": "Cerrar Sesión",
+  "email": "Correo Electrónico",
+  "password": "Contraseña",
+  "signIn": "ENTRAR",
+  "signUp": "REGISTRARSE",
+  "loginError": "Error al iniciar sesión",
+  "noAccount": "¿No tienes cuenta? Regístrate",
+  "haveAccount": "¿Ya tienes cuenta? Inicia sesión",
+  "welcome": "Bienvenido, {name}",
+  "signInWithGoogle": "Iniciar sesión con Google",
+  "sharePublicly": "Compartir públicamente",
+  "publicBestiary": "Bestiario Público",
+  "sharedBy": "Compartido por: {name}",
+  "@sharedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "download": "DESCARGAR",
+  "creatureShared": "Criatura compartida en el Bestiario Público",
+  "creatureAddedToBattle": "{name} añadido a batalla",
+  "@creatureAddedToBattle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "alreadyShared": "Esta criatura ya es pública",
+  "noPublicCreatures": "No hay criaturas compartidas todavía",
+  "keepLoggedIn": "Mantener la sesión iniciada",
+  "signInAsGuest": "ACCEDER COMO INVITADO",
+  "saveToMyBestiary": "Añadir a mis criaturas",
+  "initiativeBonusLabel": "Bono Ini",
+  "adSpace": "ESPACIO PARA PUBLICIDAD",
+  "statBlockLabel": "Ficha de estadísticas D&D 5e",
+  "exportJson": "Exportar como JSON",
+  "exportPng": "Exportar como PNG",
+  "addToBattle": "Añadir a Batalla"
 }

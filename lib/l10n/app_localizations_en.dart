@@ -12,6 +12,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'DnD Companion';
 
   @override
+  String get mainMenu => 'MAIN MENU';
+
+  @override
   String get battleSimulation => 'Battle Simulation';
 
   @override
@@ -516,4 +519,94 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get emptyQueueBestiary =>
       'The battle queue is empty. Add creatures from the Bestiary.';
+
+  @override
+  String get login => 'Login';
+
+  @override
+  String get logout => 'Logout';
+
+  @override
+  String get email => 'Email';
+
+  @override
+  String get password => 'Password';
+
+  @override
+  String get signIn => 'SIGN IN';
+
+  @override
+  String get signUp => 'SIGN UP';
+
+  @override
+  String get loginError => 'Login error';
+
+  @override
+  String get noAccount => 'Don\'t have an account? Sign up';
+
+  @override
+  String get haveAccount => 'Already have an account? Login';
+
+  @override
+  String welcome(Object name) {
+    return 'Welcome, $name';
+  }
+
+  @override
+  String get signInWithGoogle => 'Sign in with Google';
+
+  @override
+  String get sharePublicly => 'Share Publicly';
+
+  @override
+  String get publicBestiary => 'Public Bestiary';
+
+  @override
+  String sharedBy(String name) {
+    return 'Shared by: $name';
+  }
+
+  @override
+  String get download => 'DOWNLOAD';
+
+  @override
+  String get creatureShared => 'Creature shared in Public Bestiary';
+
+  @override
+  String creatureAddedToBattle(String name) {
+    return '$name added to battle';
+  }
+
+  @override
+  String get alreadyShared => 'This creature is already public';
+
+  @override
+  String get noPublicCreatures => 'No shared creatures yet';
+
+  @override
+  String get keepLoggedIn => 'Keep me logged in';
+
+  @override
+  String get signInAsGuest => 'SIGN IN AS GUEST';
+
+  @override
+  String get saveToMyBestiary => 'Add to my bestiary';
+
+  @override
+  String get initiativeBonusLabel => 'Ini Bonus';
+
+  @override
+  String get adSpace => 'ADVERTISING SPACE';
+
+  @override
+  String get statBlockLabel => 'D&D 5e Stat Block';
+
+  @override
+  String get exportJson => 'Export as JSON';
+
+  @override
+  String get exportPng => 'Export as PNG';
+
+  @override
+  String get addToBattle => 'Add to Battle';
 }

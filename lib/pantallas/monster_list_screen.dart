@@ -438,7 +438,6 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.isLocal ? l10n.localRepository : l10n.bestiaryApi),
         actions: [
           // Botón de actualización: ofrece opciones de limpieza de caché en modo API.

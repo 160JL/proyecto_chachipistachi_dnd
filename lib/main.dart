@@ -1,25 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:proyecto_chachipistachi_dnd/l10n/app_localizations.dart';
-import 'package:proyecto_chachipistachi_dnd/models/changelog.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/battle_screen.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/monster_list_screen.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/monster_create_screen.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/combat_list_screen.dart';
+import 'package:proyecto_chachipistachi_dnd/pantallas/login_screen.dart';
+import 'package:proyecto_chachipistachi_dnd/pantallas/public_bestiary_screen.dart';
+import 'package:proyecto_chachipistachi_dnd/pantallas/dashboard_screen.dart';
 import 'package:proyecto_chachipistachi_dnd/providers/battle_queue_provider.dart';
+import 'package:proyecto_chachipistachi_dnd/service/auth_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  MobileAds.instance.initialize();
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint("Error inicializando Firebase: $e");
+  }
+
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => BattleQueueProvider())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => BattleQueueProvider()),
+        ChangeNotifierProvider(create: (_) => AuthService()),
+      ],
       child: const MyApp(),
     ),
   );
 }
 
-/// Clase principal de la aplicación que configura el tema global y la navegación por rutas.
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -28,6 +43,7 @@ class MyApp extends StatelessWidget {
     const parchmentColor = Color(0xFFFDF1DC);
     const darkRed = Color(0xFF58170D);
     const goldOrange = Color(0xFFE69A28);
+    const deepBlood = Color(0xFF8B0000);
 
     return MaterialApp(
       onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
@@ -37,10 +53,7 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('es'),
-        Locale('en'),
-      ],
+      supportedLocales: const [Locale('es'), Locale('en')],
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
@@ -50,57 +63,76 @@ class MyApp extends StatelessWidget {
           primary: darkRed,
           secondary: goldOrange,
           surface: parchmentColor,
-          surfaceContainerHighest: const Color(0xFFF2E5CC),
+          onSurface: darkRed,
         ),
         scaffoldBackgroundColor: parchmentColor,
         appBarTheme: const AppBarTheme(
           backgroundColor: darkRed,
           foregroundColor: parchmentColor,
-          elevation: 4,
+          elevation: 8,
+          shadowColor: Colors.black,
           centerTitle: true,
+          titleTextStyle: TextStyle(
+            fontFamily: 'serif',
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: parchmentColor,
+            letterSpacing: 1.2,
+          ),
         ),
         cardTheme: CardThemeData(
           color: parchmentColor,
-          elevation: 2,
-          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          shape: RoundedRectangleBorder(
-            side: const BorderSide(color: goldOrange, width: 1),
-            borderRadius: BorderRadius.circular(4),
-          ),
+          elevation: 6,
+          margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+          shape: const _DndCardShape(), 
+          shadowColor: darkRed.withAlpha(80),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: darkRed,
             foregroundColor: parchmentColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(4),
+            elevation: 4,
+            textStyle: const TextStyle(
+              fontFamily: 'serif',
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+              letterSpacing: 1.1,
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            shape: const RoundedRectangleBorder(
+              side: BorderSide(color: goldOrange, width: 2),
+              borderRadius: BorderRadius.zero,
             ),
           ),
         ),
-        dividerTheme: const DividerThemeData(
-          color: darkRed,
-          thickness: 1.5,
-          space: 24,
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: const Color(0xFFF2E5CC),
+          isDense: false,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          border: const OutlineInputBorder(
+            borderRadius: BorderRadius.zero,
+            borderSide: BorderSide(color: darkRed),
+          ),
+          enabledBorder: const OutlineInputBorder(
+            borderRadius: BorderRadius.zero,
+            borderSide: BorderSide(color: darkRed, width: 1),
+          ),
+          focusedBorder: const OutlineInputBorder(
+            borderRadius: BorderRadius.zero,
+            borderSide: BorderSide(color: goldOrange, width: 2),
+          ),
+          labelStyle: const TextStyle(color: darkRed, fontFamily: 'serif', fontSize: 14),
         ),
         textTheme: const TextTheme(
-          displayLarge: TextStyle(
-            color: darkRed,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'serif',
-          ),
-          headlineMedium: TextStyle(
-            color: darkRed,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'serif',
-          ),
-          titleLarge: TextStyle(
-            color: darkRed,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'serif',
-          ),
-          bodyMedium: TextStyle(color: Colors.black87, fontSize: 16),
-          bodySmall: TextStyle(color: Colors.black54, fontSize: 14),
+          displayLarge: TextStyle(color: darkRed, fontWeight: FontWeight.bold, fontFamily: 'serif'),
+          headlineMedium: TextStyle(color: darkRed, fontWeight: FontWeight.bold, fontFamily: 'serif'),
+          titleLarge: TextStyle(color: darkRed, fontWeight: FontWeight.bold, fontFamily: 'serif', fontSize: 18),
+          titleMedium: TextStyle(color: darkRed, fontWeight: FontWeight.bold, fontFamily: 'serif', fontSize: 16),
+          bodyLarge: TextStyle(color: Colors.black87, fontSize: 15, fontFamily: 'serif'),
+          bodyMedium: TextStyle(color: Colors.black87, fontSize: 13, fontFamily: 'serif'),
         ),
+        dividerTheme: const DividerThemeData(color: darkRed, thickness: 1.5, space: 20),
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
@@ -109,211 +141,120 @@ class MyApp extends StatelessWidget {
           seedColor: darkRed,
           brightness: Brightness.dark,
           primary: goldOrange,
-          secondary: goldOrange,
-          surface: const Color(0xFF1E1E1E),
+          secondary: deepBlood,
+          surface: const Color(0xFF1A1A1A),
+          onSurface: goldOrange,
         ),
         scaffoldBackgroundColor: const Color(0xFF121212),
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.black,
           foregroundColor: goldOrange,
-          elevation: 4,
+          elevation: 10,
+          shadowColor: Colors.black,
           centerTitle: true,
+          titleTextStyle: TextStyle(
+            fontFamily: 'serif',
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: goldOrange,
+          ),
+        ),
+        cardTheme: CardThemeData(
+          color: const Color(0xFF1E1E1E),
+          elevation: 6,
+          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          shape: const _DndCardShape(), 
+          shadowColor: Colors.black,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF2A2A2A),
+            foregroundColor: goldOrange,
+            textStyle: const TextStyle(fontFamily: 'serif', fontWeight: FontWeight.bold, fontSize: 14),
+            shape: const RoundedRectangleBorder(
+              side: BorderSide(color: goldOrange, width: 1),
+              borderRadius: BorderRadius.zero,
+            ),
+          ),
         ),
         textTheme: const TextTheme(
           displayLarge: TextStyle(color: goldOrange, fontWeight: FontWeight.bold, fontFamily: 'serif'),
           headlineMedium: TextStyle(color: goldOrange, fontWeight: FontWeight.bold, fontFamily: 'serif'),
-          titleLarge: TextStyle(color: goldOrange, fontWeight: FontWeight.bold, fontFamily: 'serif'),
-          bodyMedium: TextStyle(color: Colors.white70, fontSize: 16),
-          bodySmall: TextStyle(color: Colors.white60, fontSize: 14),
+          titleLarge: TextStyle(color: goldOrange, fontWeight: FontWeight.bold, fontFamily: 'serif', fontSize: 18),
+          titleMedium: TextStyle(color: goldOrange, fontWeight: FontWeight.bold, fontFamily: 'serif', fontSize: 16),
+          bodyLarge: TextStyle(color: Colors.white70, fontSize: 15, fontFamily: 'serif'),
+          bodyMedium: TextStyle(color: Colors.white60, fontSize: 13, fontFamily: 'serif'),
         ),
+        dividerTheme: const DividerThemeData(color: goldOrange, thickness: 1.5, space: 20),
       ),
       themeMode: ThemeMode.system,
-      // Cambia automáticamente según el sistema
-      // Mapeo de rutas de la aplicación a sus respectivos componentes/pantallas.
+      home: const AuthWrapper(),
       routes: {
-        "/": (context) => const MyHomePage(),
-        "/battlescreen": (context) => const BattleScreen(),
-        "/api": (context) => const MonsterListScreen(isLocal: false),
-        "/create": (context) => const MonsterCreateScreen(),
-        "/repository": (context) => const MonsterListScreen(isLocal: true),
-        "/initiative": (context) => const CombatListScreen(),
+        "/dashboard": (context) => const DashboardScreen(),
+        "/battlescreen": (context) => const AuthWrapper(child: BattleScreen()),
+        "/api": (context) => const AuthWrapper(child: MonsterListScreen(isLocal: false)),
+        "/create": (context) => const AuthWrapper(child: MonsterCreateScreen()),
+        "/repository": (context) => const AuthWrapper(child: MonsterListScreen(isLocal: true)),
+        "/public": (context) => const AuthWrapper(child: PublicBestiaryScreen()),
+        "/initiative": (context) => const AuthWrapper(child: CombatListScreen()),
       },
     );
   }
 }
 
-/// Pantalla de inicio que actúa como menú principal de la aplicación.
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key});
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  String _version = appChangelogES.isNotEmpty ? appChangelogES.first.version : "";
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  // Eliminamos _loadVersion ya que usaremos el changelog directamente
+class AuthWrapper extends StatelessWidget {
+  final Widget? child;
+  const AuthWrapper({super.key, this.child});
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(l10n.appTitle),
-      ),
-      body: Stack(
-        children: [
-          Center(
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Botones de acceso a las distintas secciones con etiquetas claras.
-                  _buildMenuButton(
-                    context,
-                    l10n.battleSimulation,
-                    Icons.grid_on,
-                    "/battlescreen",
-                  ),
-                  _buildMenuButton(
-                    context,
-                    l10n.initiativeTracker,
-                    Icons.list_alt,
-                    "/initiative",
-                  ),
-                  _buildMenuButton(
-                    context,
-                    l10n.createNewCreature,
-                    Icons.add_circle_outline,
-                    "/create",
-                  ),
-                  _buildMenuButton(
-                    context,
-                    l10n.consultBestiary,
-                    Icons.public,
-                    "/api",
-                  ),
-                  _buildMenuButton(
-                    context,
-                    l10n.mySavedCreatures,
-                    Icons.storage,
-                    "/repository",
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (_version.isNotEmpty)
-            Positioned(
-              bottom: 12,
-              right: 16,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'v$_version',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const SizedBox(width: 8),
-                  InkWell(
-                    onTap: () => _showChangelog(context),
-                    borderRadius: BorderRadius.circular(20),
-                    child: Padding(
-                      padding: const EdgeInsets.all(4.0),
-                      child: Icon(
-                        Icons.history,
-                        size: 20,
-                        color: Theme.of(context).colorScheme.primary.withAlpha(180),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
+    final authService = Provider.of<AuthService>(context);
+    return StreamBuilder<User?>(
+      stream: authService.userStream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+        
+        // Si el usuario está autenticado en Firebase o es invitado
+        if (snapshot.hasData || authService.isGuest) {
+          return child ?? const DashboardScreen();
+        }
+        
+        return const LoginScreen();
+      },
     );
   }
+}
 
-  void _showChangelog(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final isEn = Localizations.localeOf(context).languageCode == 'en';
-    final changelog = isEn ? appChangelogEN : appChangelogES;
+class _DndCardShape extends OutlinedBorder {
+  const _DndCardShape({super.side});
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.changelogTitle),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: changelog.length,
-            itemBuilder: (context, index) {
-              final entry = changelog[index];
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "${l10n.version} ${entry.version} (${entry.date})",
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  ...entry.changes.map((change) => Padding(
-                    padding: const EdgeInsets.only(left: 8.0, bottom: 2.0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text("• "),
-                        Expanded(child: Text(change)),
-                      ],
-                    ),
-                  )),
-                  const Divider(),
-                ],
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.close),
-          ),
-        ],
-      ),
-    );
+  @override
+  OutlinedBorder copyWith({BorderSide? side}) => _DndCardShape(side: side ?? this.side);
+
+  @override
+  Path getInnerPath(Rect rect, {TextDirection? textDirection}) => Path()..addRect(rect);
+
+  @override
+  Path getOuterPath(Rect rect, {TextDirection? textDirection}) => Path()..addRect(rect);
+
+  @override
+  void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {
+    final paint = Paint()
+      ..color = const Color(0xFFE69A28)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawRect(Rect.fromLTWH(rect.left, rect.top, rect.width, 6), paint);
+    canvas.drawRect(Rect.fromLTWH(rect.left, rect.bottom - 6, rect.width, 6), paint);
+
+    final sidePaint = Paint()
+      ..color = const Color(0xFFE69A28)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    canvas.drawRect(rect, sidePaint);
   }
 
-  /// Función auxiliar para crear botones de menú uniformes y descriptivos.
-  Widget _buildMenuButton(
-    BuildContext context,
-    String text,
-    IconData icon,
-    String? route, {
-    VoidCallback? onTap,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: ElevatedButton.icon(
-        onPressed: onTap ?? () => Navigator.pushNamed(context, route!),
-        icon: Icon(icon),
-        label: Text(text, style: const TextStyle(fontSize: 16)),
-        style: ElevatedButton.styleFrom(
-          minimumSize: const Size(280, 50),
-          alignment: Alignment.centerLeft,
-        ),
-      ),
-    );
-  }
+  @override
+  ShapeBorder scale(double t) => _DndCardShape(side: side.scale(t));
 }

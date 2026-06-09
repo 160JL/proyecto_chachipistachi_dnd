@@ -9,12 +9,15 @@ import 'package:proyecto_chachipistachi_dnd/service/connection_service.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/monster_create_screen.dart';
 
 import 'package:proyecto_chachipistachi_dnd/providers/battle_queue_provider.dart';
+import 'package:proyecto_chachipistachi_dnd/service/monster_storage_service.dart';
 import 'dart:convert';
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
+
+import '../l10n/app_localizations.dart';
 
 /// Pantalla que muestra la ficha detallada de una criatura.
 class MonsterDetailScreen extends StatefulWidget {
@@ -27,6 +30,9 @@ class MonsterDetailScreen extends StatefulWidget {
   /// Indica si se deben mostrar los botones de acción (BATALLA, EDITAR).
   /// Útil para reutilizar la pantalla como modo lectura.
   final bool showActions;
+  
+  /// Indica si se está viendo desde el Bestiario Público
+  final bool isPublicView;
 
   const MonsterDetailScreen({
     super.key,
@@ -35,6 +41,7 @@ class MonsterDetailScreen extends StatefulWidget {
     this.monster,
     this.monsterIndex,
     this.showActions = true,
+    this.isPublicView = false,
   });
 
   @override
@@ -121,7 +128,6 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.monsterName),
         actions: [
           IconButton(
@@ -613,7 +619,7 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
           if (widget.showActions) ...[
             ListTile(
               leading: const Icon(Icons.shield),
-              title: const Text("Añadir a Batalla"),
+              title: Text(AppLocalizations.of(context)!.addToBattle),
               onTap: () {
                 Provider.of<BattleQueueProvider>(
                   context,
@@ -622,7 +628,7 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text("${_currentMonster!.name} añadido a batalla"),
+                    content: Text(AppLocalizations.of(context)!.creatureAddedToBattle(_currentMonster!.name ?? "")),
                   ),
                 );
               },
@@ -652,9 +658,53 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
             ),
             const Divider(),
           ],
+          if (widget.isPublicView)
+            ListTile(
+              leading: const Icon(Icons.download, color: Colors.blue),
+              title: Text(AppLocalizations.of(context)!.saveToMyBestiary),
+              onTap: () async {
+                Navigator.pop(context);
+                try {
+                  await MonsterStorageService().saveMonster(_currentMonster!);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(AppLocalizations.of(context)!.creatureSaved)),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Error: $e")),
+                    );
+                  }
+                }
+              },
+            ),
+          if (widget.monster != null && !widget.isPublicView)
+            ListTile(
+              leading: const Icon(Icons.public),
+              title: Text(AppLocalizations.of(context)!.sharePublicly),
+              onTap: () async {
+                Navigator.pop(context);
+                try {
+                  await MonsterStorageService().shareMonsterPublicly(_currentMonster!);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(AppLocalizations.of(context)!.creatureShared)),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Error: $e")),
+                    );
+                  }
+                }
+              },
+            ),
           ListTile(
             leading: const Icon(Icons.code),
-            title: const Text("Exportar como JSON"),
+            title: Text(AppLocalizations.of(context)!.exportJson),
             onTap: () {
               Navigator.pop(context);
               _exportAsJson();
@@ -662,7 +712,7 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.image),
-            title: const Text("Exportar como PNG"),
+            title: Text(AppLocalizations.of(context)!.exportPng),
             onTap: () {
               Navigator.pop(context);
               _exportAsPng();
@@ -672,7 +722,7 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Text(
-              "D&D 5e Stat Block",
+              AppLocalizations.of(context)!.statBlockLabel,
               style: TextStyle(
                 fontStyle: FontStyle.italic,
                 color: Theme.of(context).disabledColor,
@@ -697,7 +747,7 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
       // Intentamos abrir el selector de archivos para guardar
       // En móviles, saveFile requiere los bytes directamente
       final bytes = utf8.encode(jsonStr);
-      String? outputPath = await FilePicker.platform.saveFile(
+      String? outputPath = await FilePicker.saveFile(
         dialogTitle: 'Guardar como JSON',
         fileName: '${_currentMonster!.name}_stats.json',
         type: FileType.custom,
@@ -801,7 +851,7 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
 
       // Selector de archivos para guardar la imagen
       // Pasamos los bytes para compatibilidad con Android/iOS
-      String? outputPath = await FilePicker.platform.saveFile(
+      String? outputPath = await FilePicker.saveFile(
         dialogTitle: 'Guardar Ficha como PNG',
         fileName: '${_currentMonster!.name}_ficha.png',
         type: FileType.image,

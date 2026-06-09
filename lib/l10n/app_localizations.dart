@@ -104,6 +104,12 @@ abstract class AppLocalizations {
   /// **'Asistente DnD'**
   String get appTitle;
 
+  /// No description provided for @mainMenu.
+  ///
+  /// In es, this message translates to:
+  /// **'MENÚ PRINCIPAL'**
+  String get mainMenu;
+
   /// No description provided for @battleSimulation.
   ///
   /// In es, this message translates to:
@@ -1045,6 +1051,174 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'La cola de batalla está vacía. Añade criaturas desde el Bestiario.'**
   String get emptyQueueBestiary;
+
+  /// No description provided for @login.
+  ///
+  /// In es, this message translates to:
+  /// **'Iniciar Sesión'**
+  String get login;
+
+  /// No description provided for @logout.
+  ///
+  /// In es, this message translates to:
+  /// **'Cerrar Sesión'**
+  String get logout;
+
+  /// No description provided for @email.
+  ///
+  /// In es, this message translates to:
+  /// **'Correo Electrónico'**
+  String get email;
+
+  /// No description provided for @password.
+  ///
+  /// In es, this message translates to:
+  /// **'Contraseña'**
+  String get password;
+
+  /// No description provided for @signIn.
+  ///
+  /// In es, this message translates to:
+  /// **'ENTRAR'**
+  String get signIn;
+
+  /// No description provided for @signUp.
+  ///
+  /// In es, this message translates to:
+  /// **'REGISTRARSE'**
+  String get signUp;
+
+  /// No description provided for @loginError.
+  ///
+  /// In es, this message translates to:
+  /// **'Error al iniciar sesión'**
+  String get loginError;
+
+  /// No description provided for @noAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'¿No tienes cuenta? Regístrate'**
+  String get noAccount;
+
+  /// No description provided for @haveAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Ya tienes cuenta? Inicia sesión'**
+  String get haveAccount;
+
+  /// No description provided for @welcome.
+  ///
+  /// In es, this message translates to:
+  /// **'Bienvenido, {name}'**
+  String welcome(Object name);
+
+  /// No description provided for @signInWithGoogle.
+  ///
+  /// In es, this message translates to:
+  /// **'Iniciar sesión con Google'**
+  String get signInWithGoogle;
+
+  /// No description provided for @sharePublicly.
+  ///
+  /// In es, this message translates to:
+  /// **'Compartir públicamente'**
+  String get sharePublicly;
+
+  /// No description provided for @publicBestiary.
+  ///
+  /// In es, this message translates to:
+  /// **'Bestiario Público'**
+  String get publicBestiary;
+
+  /// No description provided for @sharedBy.
+  ///
+  /// In es, this message translates to:
+  /// **'Compartido por: {name}'**
+  String sharedBy(String name);
+
+  /// No description provided for @download.
+  ///
+  /// In es, this message translates to:
+  /// **'DESCARGAR'**
+  String get download;
+
+  /// No description provided for @creatureShared.
+  ///
+  /// In es, this message translates to:
+  /// **'Criatura compartida en el Bestiario Público'**
+  String get creatureShared;
+
+  /// No description provided for @creatureAddedToBattle.
+  ///
+  /// In es, this message translates to:
+  /// **'{name} añadido a batalla'**
+  String creatureAddedToBattle(String name);
+
+  /// No description provided for @alreadyShared.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta criatura ya es pública'**
+  String get alreadyShared;
+
+  /// No description provided for @noPublicCreatures.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay criaturas compartidas todavía'**
+  String get noPublicCreatures;
+
+  /// No description provided for @keepLoggedIn.
+  ///
+  /// In es, this message translates to:
+  /// **'Mantener la sesión iniciada'**
+  String get keepLoggedIn;
+
+  /// No description provided for @signInAsGuest.
+  ///
+  /// In es, this message translates to:
+  /// **'ACCEDER COMO INVITADO'**
+  String get signInAsGuest;
+
+  /// No description provided for @saveToMyBestiary.
+  ///
+  /// In es, this message translates to:
+  /// **'Añadir a mis criaturas'**
+  String get saveToMyBestiary;
+
+  /// No description provided for @initiativeBonusLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Bono Ini'**
+  String get initiativeBonusLabel;
+
+  /// No description provided for @adSpace.
+  ///
+  /// In es, this message translates to:
+  /// **'ESPACIO PARA PUBLICIDAD'**
+  String get adSpace;
+
+  /// No description provided for @statBlockLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Ficha de estadísticas D&D 5e'**
+  String get statBlockLabel;
+
+  /// No description provided for @exportJson.
+  ///
+  /// In es, this message translates to:
+  /// **'Exportar como JSON'**
+  String get exportJson;
+
+  /// No description provided for @exportPng.
+  ///
+  /// In es, this message translates to:
+  /// **'Exportar como PNG'**
+  String get exportPng;
+
+  /// No description provided for @addToBattle.
+  ///
+  /// In es, this message translates to:
+  /// **'Añadir a Batalla'**
+  String get addToBattle;
 }
 
 class _AppLocalizationsDelegate

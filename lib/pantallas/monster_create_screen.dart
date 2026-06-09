@@ -513,7 +513,6 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(
           widget.isEditing
               ? l10n.editCreature(widget.baseMonster?.name ?? '')
