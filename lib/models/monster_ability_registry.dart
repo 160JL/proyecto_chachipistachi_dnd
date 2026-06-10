@@ -1,30 +1,22 @@
 /// Modelo que representa una entrada individual en el registro de habilidades.
-///
-/// Almacena una acción, reacción, acción legendaria o habilidad especial
-/// extraída de una criatura de la API, junto con el CR y nombre de la criatura
-/// de la que procede. Permite la generación aleatoria de criaturas seleccionando
-/// habilidades apropiadas para un rango de CR determinado.
 class AbilityRegistryEntry {
-  /// Nombre de la habilidad o acción (ej: "Multiattack", "Amphibious").
+  /// Nombre de la habilidad o acción.
   final String name;
 
   /// Descripción completa del efecto de la habilidad/acción.
   final String desc;
 
-  /// Categoría de la entrada. Valores posibles:
-  /// - `action`: Acción de combate estándar.
-  /// - `reaction`: Reacción de combate.
-  /// - `legendary_action`: Acción legendaria.
-  /// - `special_ability`: Habilidad especial o rasgo pasivo.
+  /// Categoría de la entrada (action, reaction, legendary_action, special_ability).
   final String category;
 
-  /// Challenge Rating (CR) de la criatura de la que se extrajo esta entrada.
-  /// Se usa para filtrar habilidades apropiadas según el nivel de desafío deseado.
+  /// Challenge Rating (CR) de la criatura de origen.
   final num challengeRating;
 
-  /// Nombre de la criatura original de la que procede esta entrada.
-  /// Útil para trazabilidad y referencia.
+  /// Nombre de la criatura original.
   final String monsterName;
+
+  /// Indica si procede de una criatura local del usuario (true) o de la API oficial (false).
+  final bool isLocal;
 
   AbilityRegistryEntry({
     required this.name,
@@ -32,9 +24,10 @@ class AbilityRegistryEntry {
     required this.category,
     required this.challengeRating,
     required this.monsterName,
+    this.isLocal = false,
   });
 
-  /// Crea una instancia de [AbilityRegistryEntry] a partir de un mapa JSON.
+  /// Crea una instancia a partir de un mapa JSON.
   factory AbilityRegistryEntry.fromJson(Map<String, dynamic> json) {
     return AbilityRegistryEntry(
       name: json['name'] ?? '',
@@ -42,10 +35,11 @@ class AbilityRegistryEntry {
       category: json['category'] ?? '',
       challengeRating: json['challenge_rating'] ?? 0,
       monsterName: json['monster_name'] ?? '',
+      isLocal: json['is_local'] ?? false,
     );
   }
 
-  /// Serializa la entrada a un mapa JSON para almacenamiento persistente.
+  /// Serializa la entrada a un mapa JSON.
   Map<String, dynamic> toJson() {
     return {
       'name': name,
@@ -53,6 +47,7 @@ class AbilityRegistryEntry {
       'category': category,
       'challenge_rating': challengeRating,
       'monster_name': monsterName,
+      'is_local': isLocal,
     };
   }
 }

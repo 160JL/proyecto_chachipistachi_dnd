@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/monster.dart';
 import '../models/monster_ability_registry.dart';
@@ -8,11 +9,14 @@ import 'connection_service.dart';
 /// Servicio encargado de construir, almacenar y consultar el registro
 /// persistente de habilidades de criaturas de D&D 5e.
 class MonsterAbilityRegistryService {
-  /// Clave booleana que indica si el registro ya fue construido y almacenado.
+  /// Clave booleana que indica si el registro ya fue construido.
   static const String _registryBuiltKey = 'ability_registry_built';
 
   /// Clave donde se almacena el registro completo como cadena JSON.
   static const String _registryDataKey = 'ability_registry_data';
+
+  /// Clave que almacena el UID del usuario que generó el registro por última vez.
+  static const String _registryUidKey = 'ability_registry_uid';
 
   /// Comprueba si el registro de habilidades ya fue construido previamente.
   Future<bool> isRegistryBuilt() async {
@@ -20,11 +24,22 @@ class MonsterAbilityRegistryService {
     return prefs.getBool(_registryBuiltKey) ?? false;
   }
 
+  /// Retorna el UID asociado al registro actual.
+  Future<String?> getRegistryUid() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_registryUidKey);
+  }
+
+  /// Verifica si el registro actual pertenece al usuario identificado.
+  /// Retorna true si el UID coincide, false si es de otro usuario.
+  Future<bool> isRegistryConsistentWithUser(String? uid) async {
+    final String? storedUid = await getRegistryUid();
+    // Si no hay UID guardado pero el registro existe (v0.8.0), asumimos inconsistente por seguridad.
+    if (storedUid == null) return false;
+    return storedUid == (uid ?? "guest");
+  }
+
   /// Construye el registro de habilidades procesando la API y el repositorio local.
-  /// 
-  /// [monsterUrls] — Lista de criaturas de la API.
-  /// [localMonsters] — Lista opcional de criaturas locales.
-  /// [onProgress] — Callback para el UI.
   Future<void> buildRegistry(
     List<Map<String, dynamic>> monsterUrls, {
     List<Monster>? localMonsters,
@@ -48,7 +63,7 @@ class MonsterAbilityRegistryService {
 
       try {
         final Monster monster = await connectionService.fetchMonsterDetail(url);
-        _extractAbilities(monster, registry);
+        _extractAbilities(monster, registry, isLocal: false);
       } catch (e) {
         debugPrint('Error al procesar criatura API en $url: $e');
       }
@@ -59,7 +74,7 @@ class MonsterAbilityRegistryService {
     // 2. Procesar Locales
     if (localMonsters != null) {
       for (int i = 0; i < localCount; i++) {
-        _extractAbilities(localMonsters[i], registry);
+        _extractAbilities(localMonsters[i], registry, isLocal: true);
         if (onProgress != null) onProgress(apiCount + i + 1, total);
       }
     }
@@ -69,7 +84,7 @@ class MonsterAbilityRegistryService {
   }
 
   /// Helper privado para extraer habilidades de un objeto Monster e insertarlas en la lista.
-  void _extractAbilities(Monster monster, List<AbilityRegistryEntry> targetList) {
+  void _extractAbilities(Monster monster, List<AbilityRegistryEntry> targetList, {required bool isLocal}) {
     final num cr = monster.challengeRating ?? 0;
     final String monsterName = monster.name ?? 'Desconocido';
 
@@ -81,6 +96,7 @@ class MonsterAbilityRegistryService {
           category: 'action',
           challengeRating: cr,
           monsterName: monsterName,
+          isLocal: isLocal,
         ));
       }
     }
@@ -93,6 +109,7 @@ class MonsterAbilityRegistryService {
           category: 'reaction',
           challengeRating: cr,
           monsterName: monsterName,
+          isLocal: isLocal,
         ));
       }
     }
@@ -105,6 +122,7 @@ class MonsterAbilityRegistryService {
           category: 'legendary_action',
           challengeRating: cr,
           monsterName: monsterName,
+          isLocal: isLocal,
         ));
       }
     }
@@ -117,33 +135,38 @@ class MonsterAbilityRegistryService {
           category: 'special_ability',
           challengeRating: cr,
           monsterName: monsterName,
+          isLocal: isLocal,
         ));
       }
     }
   }
 
-  /// Guarda la lista de entradas y marca el flag como completado.
+  /// Guarda la lista de entradas y marca el flag como completado, asociando el UID actual.
   Future<void> _saveRegistry(List<AbilityRegistryEntry> registry) async {
     final prefs = await SharedPreferences.getInstance();
     final String jsonData = jsonEncode(registry.map((entry) => entry.toJson()).toList());
 
-    await prefs.setString(_registryDataKey, jsonData);
-    await prefs.setBool(_registryBuiltKey, true); // SOLO AQUÍ SE MARCA COMO TRUE
+    final String? currentUid = FirebaseAuth.instance.currentUser?.uid ?? "guest";
 
-    debugPrint('Registro de habilidades completado: ${registry.length} entradas.');
+    await prefs.setString(_registryDataKey, jsonData);
+    await prefs.setString(_registryUidKey, currentUid!);
+    await prefs.setBool(_registryBuiltKey, true);
+
+    debugPrint('Registro de habilidades completado: ${registry.length} entradas para el usuario $currentUid.');
   }
 
   /// Borra el registro actual de habilidades.
   Future<void> clearRegistry() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_registryDataKey);
+    await prefs.remove(_registryUidKey);
     await prefs.setBool(_registryBuiltKey, false);
   }
 
-  /// Añade habilidades de una sola criatura al registro existente.
+  /// Añade habilidades de una sola criatura al registro existente (marcada como local).
   Future<void> addMonsterToRegistry(Monster monster) async {
     final List<AbilityRegistryEntry> newEntries = [];
-    _extractAbilities(monster, newEntries);
+    _extractAbilities(monster, newEntries, isLocal: true);
     if (newEntries.isNotEmpty) {
       await addEntriesFromMonster(newEntries);
     }
@@ -170,6 +193,24 @@ class MonsterAbilityRegistryService {
     if (addedCount > 0) {
       await _saveRegistry(existing);
     }
+  }
+
+  /// Actualiza SOLAMENTE las entradas locales. Útil al cambiar de usuario sin borrar la API.
+  Future<void> updateLocalEntriesOnly(List<Monster> localMonsters) async {
+    // 1. Obtener todas las entradas actuales
+    final List<AbilityRegistryEntry> allEntries = await getAllEntries();
+    
+    // 2. Filtrar y mantener solo las que NO son locales (las de la API oficial)
+    final List<AbilityRegistryEntry> apiOnlyEntries = allEntries.where((e) => !e.isLocal).toList();
+    
+    // 3. Procesar las nuevas criaturas locales
+    for (final monster in localMonsters) {
+      _extractAbilities(monster, apiOnlyEntries, isLocal: true);
+    }
+    
+    // 4. Guardar el nuevo registro mixto
+    await _saveRegistry(apiOnlyEntries);
+    debugPrint('Actualización parcial completada: se han regenerado las habilidades de las criaturas locales del nuevo usuario.');
   }
 
   /// Recupera todas las entradas del registro.

@@ -16,6 +16,7 @@ const List<ChangelogEntry> appChangelogES = [
     date: "2026-05-19",
     changes: [
       "Mejora del Registro de Habilidades: proceso persistente y obligatorio (no se puede cerrar hasta finalizar).",
+      "Soporte Multi-usuario: detección automática de cambio de cuenta y actualización inteligente de habilidades locales.",
       "Sincronización total: las habilidades de criaturas creadas o descargadas del Bestiario Público se añaden automáticamente al registro local.",
       "Regeneración Dual: el proceso de reconstrucción ahora procesa tanto la API oficial como tu Repositorio Local.",
       "Gestión de estado mejorada: el registro solo se considera válido al completarse al 100%.",
@@ -92,6 +93,7 @@ const List<ChangelogEntry> appChangelogEN = [
     date: "2026-05-19",
     changes: [
       "Skill Registry Improvements: persistent and mandatory process (cannot be closed until finished).",
+      "Multi-user Support: automatic account change detection and smart local skill updates.",
       "Full Synchronization: skills from created or downloaded community creatures are automatically added to the local registry.",
       "Dual Regeneration: the reconstruction process now processes both the official API and your Local Repository.",
       "Improved state management: the registry is only considered valid when 100% complete.",

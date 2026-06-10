@@ -5,6 +5,8 @@ import 'package:proyecto_chachipistachi_dnd/l10n/app_localizations.dart';
 import 'package:proyecto_chachipistachi_dnd/models/changelog.dart';
 import 'package:proyecto_chachipistachi_dnd/service/auth_service.dart';
 import 'package:proyecto_chachipistachi_dnd/service/ad_service.dart';
+import 'package:proyecto_chachipistachi_dnd/service/monster_ability_registry_service.dart';
+import 'package:proyecto_chachipistachi_dnd/service/monster_storage_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -17,11 +19,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final String _version = appChangelogES.isNotEmpty ? appChangelogES.first.version : "";
   BannerAd? _bannerAd;
   bool _isAdLoaded = false;
+  bool _isUpdatingRegistry = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _checkAndLoadAd();
+    _checkRegistryConsistency();
+  }
+
+  /// Verifica si el registro de habilidades coincide con el usuario actual.
+  /// Si no coincide, actualiza las habilidades locales en segundo plano.
+  Future<void> _checkRegistryConsistency() async {
+    if (_isUpdatingRegistry) return;
+
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final registryService = MonsterAbilityRegistryService();
+
+    // Solo verificamos si el registro base ya existe
+    if (await registryService.isRegistryBuilt()) {
+      final isConsistent = await registryService.isRegistryConsistentWithUser(
+        authService.currentUser?.uid
+      );
+
+      if (!isConsistent) {
+        setState(() => _isUpdatingRegistry = true);
+        try {
+          final localMonsters = await MonsterStorageService().getMonsters();
+          await registryService.updateLocalEntriesOnly(localMonsters);
+        } catch (e) {
+          debugPrint("Error actualizando registro para el nuevo usuario: $e");
+        } finally {
+          if (mounted) setState(() => _isUpdatingRegistry = false);
+        }
+      }
+    }
   }
 
   /// Verifica el estado VIP y carga o libera el anuncio según corresponda.
@@ -115,6 +147,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
+                            if (_isUpdatingRegistry)
+                              const Padding(
+                                padding: EdgeInsets.only(bottom: 20),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      width: 15,
+                                      height: 15,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    ),
+                                    SizedBox(width: 10),
+                                    Text(
+                                      "Sincronizando habilidades...",
+                                      style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             Icon(Icons.menu_book, size: 60, color: primaryColor),
                             const SizedBox(height: 10),
                             Text(
