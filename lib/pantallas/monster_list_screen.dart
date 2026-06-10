@@ -933,7 +933,7 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
       Image.network(
         "https://www.dnd5eapi.co/api/images/monsters/$indexName.png",
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) =>
+        errorBuilder: (_, _, _) =>
             const Icon(Icons.pets, color: Colors.grey),
       ),
     );
@@ -953,7 +953,7 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
         Image.network(
           url,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => const Icon(Icons.pets),
+          errorBuilder: (_, _, _) => const Icon(Icons.pets),
         ),
       );
     } else {

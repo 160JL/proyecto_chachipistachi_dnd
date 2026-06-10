@@ -959,7 +959,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
           _imageController.text,
           height: 150,
           fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) =>
+          errorBuilder: (_, _, _) =>
               const Icon(Icons.broken_image, size: 80),
         ),
       );
@@ -970,7 +970,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
           _imageController.text,
           height: 150,
           fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) =>
+          errorBuilder: (_, _, _) =>
               const Icon(Icons.broken_image, size: 80),
         ),
       );
@@ -981,7 +981,7 @@ class _MonsterCreateScreenState extends State<MonsterCreateScreen> {
           "https://www.dnd5eapi.co${_imageController.text}",
           height: 150,
           fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) =>
+          errorBuilder: (_, _, _) =>
               const Icon(Icons.broken_image, size: 80),
         ),
       );

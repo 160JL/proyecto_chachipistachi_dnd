@@ -316,5 +316,26 @@
   "blockedMessage": "Your access to the application has been restricted.",
   "blockReasonLabel": "Reason for the block:",
   "noReasonProvided": "No specific reason provided.",
-  "contactAdmin": "If you believe this is an error, please contact support."
+  "contactAdmin": "If you believe this is an error, please contact support.",
+  "searchCreature": "Search creature...",
+  "clearSearch": "Clear search",
+  "back": "Back",
+  "typeCreatureName": "Type the name of a creature",
+  "myCreaturesHeader": "MY CREATURES",
+  "apiBestiaryHeader": "API BESTIARY",
+  "noMatchingCreatures": "No matching creatures found",
+  "tapToLoadDetails": "Tap to load details from the cloud",
+  "errorLoadingCreature": "Error loading creature: {error}",
+  "@errorLoadingCreature": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "searchInBestiary": "Search in the Bestiary",
+  "apiAndMyCreatures": "API and My Creatures",
+  "menu": "Menu",
+  "syncingAbilities": "Syncing abilities...",
+  "toggleVip": "Toggle VIP"
 }

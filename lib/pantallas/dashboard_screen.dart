@@ -118,11 +118,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: Text(l10n.appTitle, style: const TextStyle(letterSpacing: 2)),
         actions: [
           // Botón para simular cambio VIP (útil para pruebas de anuncios)
-          /**IconButton(
+          IconButton(
             icon: Icon(authService.isVip ? Icons.star : Icons.star_border),
             onPressed: () => authService.toggleVip(),
-            tooltip: "Toggle VIP",
-          ),**/
+            tooltip: l10n.toggleVip,
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => authService.signOut(),
@@ -148,20 +148,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             if (_isUpdatingRegistry)
-                              const Padding(
-                                padding: EdgeInsets.only(bottom: 20),
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 20),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    SizedBox(
+                                    const SizedBox(
                                       width: 15,
                                       height: 15,
                                       child: CircularProgressIndicator(strokeWidth: 2),
                                     ),
-                                    SizedBox(width: 10),
+                                    const SizedBox(width: 10),
                                     Text(
-                                      "Sincronizando habilidades...",
-                                      style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                                      l10n.syncingAbilities,
+                                      style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
                                     ),
                                   ],
                                 ),

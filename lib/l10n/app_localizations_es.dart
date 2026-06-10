@@ -638,4 +638,48 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get contactAdmin =>
       'Si crees que esto es un error, contacta con soporte.';
+
+  @override
+  String get searchCreature => 'Buscar criatura...';
+
+  @override
+  String get clearSearch => 'Limpiar búsqueda';
+
+  @override
+  String get back => 'Volver';
+
+  @override
+  String get typeCreatureName => 'Escribe el nombre de una criatura';
+
+  @override
+  String get myCreaturesHeader => 'MIS CRIATURAS';
+
+  @override
+  String get apiBestiaryHeader => 'BESTIARIO API';
+
+  @override
+  String get noMatchingCreatures => 'No se encontraron criaturas coincidentes';
+
+  @override
+  String get tapToLoadDetails => 'Toca para cargar detalles desde la nube';
+
+  @override
+  String errorLoadingCreature(String error) {
+    return 'Error cargando criatura: $error';
+  }
+
+  @override
+  String get searchInBestiary => 'Buscar en el Bestiario';
+
+  @override
+  String get apiAndMyCreatures => 'API y Mis Criaturas';
+
+  @override
+  String get menu => 'Menú';
+
+  @override
+  String get syncingAbilities => 'Sincronizando habilidades...';
+
+  @override
+  String get toggleVip => 'Alternar VIP';
 }

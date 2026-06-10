@@ -99,8 +99,8 @@ class _UnifiedAddMonsterDialogState extends State<_UnifiedAddMonsterDialog> {
               // --- SECCIÓN: BÚSQUEDA ---
               ListTile(
                 leading: const Icon(Icons.search, color: Colors.blue),
-                title: const Text("Buscar en el Bestiario"),
-                subtitle: const Text("API y Mis Criaturas"),
+                title: Text(widget.l10n.searchInBestiary),
+                subtitle: Text(widget.l10n.apiAndMyCreatures),
                 onTap: () async {
                   Navigator.pop(context);
                   final Monster? selected = await showSearch<Monster?>(

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/monster.dart';
 
@@ -106,7 +107,7 @@ class MonsterStorageService {
           }).toList();
         }
       } catch (e) {
-        print("Aviso: No se pudo recuperar de Firestore (offline?). Usando local.");
+        debugPrint("Aviso: No se pudo recuperar de Firestore (offline?). Usando local.");
       }
     }
 

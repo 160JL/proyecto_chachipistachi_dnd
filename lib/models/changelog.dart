@@ -12,6 +12,16 @@ class ChangelogEntry {
 
 const List<ChangelogEntry> appChangelogES = [
   ChangelogEntry(
+    version: "0.9.1",
+    date: "2026-05-20",
+    changes: [
+      "Traducción completa del Buscador de Criaturas y otros elementos pendientes.",
+      "Filtros automáticos en el Bestiario: la lista se actualiza instantáneamente al cambiar cualquier criterio.",
+      "Sistema de reportes mejorado con motivo obligatorio y notificaciones.",
+      "Limpieza general de textos estáticos para soporte multi-idioma total.",
+    ],
+  ),
+  ChangelogEntry(
     version: "0.9.0",
     date: "2026-05-19",
     changes: [
@@ -88,6 +98,16 @@ const List<ChangelogEntry> appChangelogES = [
 ];
 
 const List<ChangelogEntry> appChangelogEN = [
+  ChangelogEntry(
+    version: "0.9.1",
+    date: "2026-05-20",
+    changes: [
+      "Full translation of the Creature Search and other pending elements.",
+      "Automatic filtering in the Bestiary: the list updates instantly when any criteria change.",
+      "Improved reporting system with mandatory reason and notifications.",
+      "General cleanup of static texts for full multi-language support.",
+    ],
+  ),
   ChangelogEntry(
     version: "0.9.0",
     date: "2026-05-19",

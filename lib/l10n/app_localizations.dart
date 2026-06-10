@@ -1273,6 +1273,90 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Si crees que esto es un error, contacta con soporte.'**
   String get contactAdmin;
+
+  /// No description provided for @searchCreature.
+  ///
+  /// In es, this message translates to:
+  /// **'Buscar criatura...'**
+  String get searchCreature;
+
+  /// No description provided for @clearSearch.
+  ///
+  /// In es, this message translates to:
+  /// **'Limpiar búsqueda'**
+  String get clearSearch;
+
+  /// No description provided for @back.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver'**
+  String get back;
+
+  /// No description provided for @typeCreatureName.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe el nombre de una criatura'**
+  String get typeCreatureName;
+
+  /// No description provided for @myCreaturesHeader.
+  ///
+  /// In es, this message translates to:
+  /// **'MIS CRIATURAS'**
+  String get myCreaturesHeader;
+
+  /// No description provided for @apiBestiaryHeader.
+  ///
+  /// In es, this message translates to:
+  /// **'BESTIARIO API'**
+  String get apiBestiaryHeader;
+
+  /// No description provided for @noMatchingCreatures.
+  ///
+  /// In es, this message translates to:
+  /// **'No se encontraron criaturas coincidentes'**
+  String get noMatchingCreatures;
+
+  /// No description provided for @tapToLoadDetails.
+  ///
+  /// In es, this message translates to:
+  /// **'Toca para cargar detalles desde la nube'**
+  String get tapToLoadDetails;
+
+  /// No description provided for @errorLoadingCreature.
+  ///
+  /// In es, this message translates to:
+  /// **'Error cargando criatura: {error}'**
+  String errorLoadingCreature(String error);
+
+  /// No description provided for @searchInBestiary.
+  ///
+  /// In es, this message translates to:
+  /// **'Buscar en el Bestiario'**
+  String get searchInBestiary;
+
+  /// No description provided for @apiAndMyCreatures.
+  ///
+  /// In es, this message translates to:
+  /// **'API y Mis Criaturas'**
+  String get apiAndMyCreatures;
+
+  /// No description provided for @menu.
+  ///
+  /// In es, this message translates to:
+  /// **'Menú'**
+  String get menu;
+
+  /// No description provided for @syncingAbilities.
+  ///
+  /// In es, this message translates to:
+  /// **'Sincronizando habilidades...'**
+  String get syncingAbilities;
+
+  /// No description provided for @toggleVip.
+  ///
+  /// In es, this message translates to:
+  /// **'Alternar VIP'**
+  String get toggleVip;
 }
 
 class _AppLocalizationsDelegate

@@ -638,4 +638,48 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get contactAdmin =>
       'If you believe this is an error, please contact support.';
+
+  @override
+  String get searchCreature => 'Search creature...';
+
+  @override
+  String get clearSearch => 'Clear search';
+
+  @override
+  String get back => 'Back';
+
+  @override
+  String get typeCreatureName => 'Type the name of a creature';
+
+  @override
+  String get myCreaturesHeader => 'MY CREATURES';
+
+  @override
+  String get apiBestiaryHeader => 'API BESTIARY';
+
+  @override
+  String get noMatchingCreatures => 'No matching creatures found';
+
+  @override
+  String get tapToLoadDetails => 'Tap to load details from the cloud';
+
+  @override
+  String errorLoadingCreature(String error) {
+    return 'Error loading creature: $error';
+  }
+
+  @override
+  String get searchInBestiary => 'Search in the Bestiary';
+
+  @override
+  String get apiAndMyCreatures => 'API and My Creatures';
+
+  @override
+  String get menu => 'Menu';
+
+  @override
+  String get syncingAbilities => 'Syncing abilities...';
+
+  @override
+  String get toggleVip => 'Toggle VIP';
 }

@@ -223,7 +223,7 @@ class _BattleScreenState extends State<BattleScreen> {
             builder: (context) => IconButton(
               icon: const Icon(Icons.menu),
               onPressed: () => Scaffold.of(context).openEndDrawer(),
-              tooltip: "Menú",
+              tooltip: l10n.menu,
             ),
           ),
         ],

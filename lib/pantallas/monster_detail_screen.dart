@@ -877,7 +877,12 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                Share.share(jsonStr, subject: 'Estadísticas de ${_currentMonster!.name}');
+                SharePlus.instance.share(
+                  ShareParams(
+                    text: jsonStr,
+                    subject: 'Estadísticas de ${_currentMonster!.name}',
+                  ),
+                );
               },
               child: const Text("COMPARTIR"),
             ),
@@ -907,7 +912,7 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
           mimeType: 'image/png',
           name: '${_currentMonster!.name}_ficha.png',
         );
-        await Share.shareXFiles([xFile], text: 'Ficha de ${_currentMonster!.name}');
+        await SharePlus.instance.share(ShareParams(previewThumbnail: xFile, text: 'Ficha de ${_currentMonster!.name}'));
         return;
       }
 
@@ -935,7 +940,7 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
         await tempFile.writeAsBytes(bytes);
         
         if (mounted) {
-          await Share.shareXFiles([XFile(tempPath)], text: 'Ficha de ${_currentMonster!.name}');
+          await SharePlus.instance.share(ShareParams(previewThumbnail: XFile(tempPath), text: 'Ficha de ${_currentMonster!.name}'));
         }
       }
     } catch (e) {

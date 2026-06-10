@@ -316,5 +316,26 @@
   "blockedMessage": "Tu acceso a la aplicación ha sido restringido.",
   "blockReasonLabel": "Motivo del bloqueo:",
   "noReasonProvided": "No se ha proporcionado un motivo específico.",
-  "contactAdmin": "Si crees que esto es un error, contacta con soporte."
+  "contactAdmin": "Si crees que esto es un error, contacta con soporte.",
+  "searchCreature": "Buscar criatura...",
+  "clearSearch": "Limpiar búsqueda",
+  "back": "Volver",
+  "typeCreatureName": "Escribe el nombre de una criatura",
+  "myCreaturesHeader": "MIS CRIATURAS",
+  "apiBestiaryHeader": "BESTIARIO API",
+  "noMatchingCreatures": "No se encontraron criaturas coincidentes",
+  "tapToLoadDetails": "Toca para cargar detalles desde la nube",
+  "errorLoadingCreature": "Error cargando criatura: {error}",
+  "@errorLoadingCreature": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "searchInBestiary": "Buscar en el Bestiario",
+  "apiAndMyCreatures": "API y Mis Criaturas",
+  "menu": "Menú",
+  "syncingAbilities": "Sincronizando habilidades...",
+  "toggleVip": "Alternar VIP"
 }

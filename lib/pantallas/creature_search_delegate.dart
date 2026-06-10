@@ -14,7 +14,7 @@ class CreatureSearchDelegate extends SearchDelegate<Monster?> {
   CreatureSearchDelegate({this.isBattleSimulator = false});
 
   @override
-  String get searchFieldLabel => "Buscar criatura...";
+  String get searchFieldLabel => ""; // Se establece dinámicamente
 
   @override
   List<Widget>? buildActions(BuildContext context) {
@@ -22,7 +22,7 @@ class CreatureSearchDelegate extends SearchDelegate<Monster?> {
       IconButton(
         icon: const Icon(Icons.clear),
         onPressed: () => query = '',
-        tooltip: "Limpiar búsqueda",
+        tooltip: AppLocalizations.of(context)!.clearSearch,
       ),
     ];
   }
@@ -32,7 +32,7 @@ class CreatureSearchDelegate extends SearchDelegate<Monster?> {
     return IconButton(
       icon: const Icon(Icons.arrow_back),
       onPressed: () => close(context, null),
-      tooltip: "Volver",
+      tooltip: AppLocalizations.of(context)!.back,
     );
   }
 
@@ -48,11 +48,12 @@ class CreatureSearchDelegate extends SearchDelegate<Monster?> {
 
   /// Construye la lista de resultados combinando datos locales y remotos.
   Widget _buildSearchResults(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (query.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
-          "Escribe el nombre de una criatura",
-          style: TextStyle(fontStyle: FontStyle.italic),
+          l10n.typeCreatureName,
+          style: const TextStyle(fontStyle: FontStyle.italic),
         ),
       );
     }
@@ -69,7 +70,7 @@ class CreatureSearchDelegate extends SearchDelegate<Monster?> {
         }
 
         if (snapshot.hasError) {
-          return Center(child: Text("Error en la búsqueda: ${snapshot.error}"));
+          return Center(child: Text("${l10n.loading}: ${snapshot.error}"));
         }
 
         // Procesamos resultados locales (Mis Criaturas).
@@ -83,18 +84,18 @@ class CreatureSearchDelegate extends SearchDelegate<Monster?> {
         return ListView(
           children: [
             if (localMonsters.isNotEmpty) ...[
-              const _SectionHeader(title: "MIS CRIATURAS"),
+              _SectionHeader(title: l10n.myCreaturesHeader),
               ...localMonsters.map((m) => _buildMonsterTile(context, m)),
             ],
             if (apiMonsters.isNotEmpty) ...[
-              const _SectionHeader(title: "BESTIARIO API"),
+              _SectionHeader(title: l10n.apiBestiaryHeader),
               ...apiMonsters.map((item) => _buildApiTile(context, item)),
             ],
             if (localMonsters.isEmpty && apiMonsters.isEmpty)
-              const Center(
+              Center(
                 child: Padding(
-                  padding: EdgeInsets.all(40.0),
-                  child: Text("No se encontraron criaturas coincidentes"),
+                  padding: const EdgeInsets.all(40.0),
+                  child: Text(l10n.noMatchingCreatures),
                 ),
               ),
           ],
@@ -105,9 +106,10 @@ class CreatureSearchDelegate extends SearchDelegate<Monster?> {
 
   /// Construye el elemento visual para un monstruo del repositorio local.
   Widget _buildMonsterTile(BuildContext context, Monster m) {
+    final l10n = AppLocalizations.of(context)!;
     return ListTile(
       leading: _buildLocalImage(m.image),
-      title: Text(m.name ?? "Sin nombre", style: const TextStyle(fontWeight: FontWeight.bold)),
+      title: Text(m.name ?? l10n.noName, style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Text("${m.size} ${m.type} - CR ${m.challengeRating}"),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => close(context, m),
@@ -117,10 +119,11 @@ class CreatureSearchDelegate extends SearchDelegate<Monster?> {
   /// Construye el elemento visual para un monstruo de la API.
   /// Al tocarlo, descarga los detalles completos antes de cerrar la búsqueda.
   Widget _buildApiTile(BuildContext context, Map<String, dynamic> item) {
+    final l10n = AppLocalizations.of(context)!;
     return ListTile(
       leading: const Icon(Icons.public, color: Colors.blueGrey),
       title: Text(item["name"] ?? "???"),
-      subtitle: const Text("Toca para cargar detalles desde la nube"),
+      subtitle: Text(l10n.tapToLoadDetails),
       onTap: () async {
         // Mostramos un indicador de carga mientras descargamos la ficha completa.
         showDialog(
@@ -138,7 +141,7 @@ class CreatureSearchDelegate extends SearchDelegate<Monster?> {
           if (context.mounted) {
             Navigator.pop(context); // Cerramos carga.
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("Error cargando criatura: $e")),
+              SnackBar(content: Text(l10n.errorLoadingCreature(e.toString()))),
             );
           }
         }
