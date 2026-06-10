@@ -423,14 +423,14 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
           final bool isPortrait = orientation == Orientation.portrait;
 
           // Definimos el widget de controles (botones y gestión).
-          // Se adapta automáticamente al espacio disponible.
-          final Widget controlsWidget = Expanded(
-            flex: 1,
+          final Widget controlsWidget = Container(
+            constraints: !isPortrait ? const BoxConstraints(maxWidth: 300) : null,
             child: Scrollbar(
               thumbVisibility: true,
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (!_session.isStarted) ...[
@@ -862,8 +862,16 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
           return Flex(
             direction: isPortrait ? Axis.vertical : Axis.horizontal,
             children: isPortrait
-                ? [listWidget, controlsWidget]
-                : [controlsWidget, listWidget],
+                ? [
+                    listWidget,
+                    // En vertical, los controles están abajo y toman su tamaño natural
+                    controlsWidget,
+                  ]
+                : [
+                    // En horizontal, los controles están a la izquierda y toman espacio proporcional
+                    Expanded(flex: 1, child: controlsWidget),
+                    listWidget,
+                  ],
           );
         },
       ),

@@ -10,6 +10,7 @@ import 'package:proyecto_chachipistachi_dnd/pantallas/monster_create_screen.dart
 
 import 'package:proyecto_chachipistachi_dnd/providers/battle_queue_provider.dart';
 import 'package:proyecto_chachipistachi_dnd/service/monster_storage_service.dart';
+import 'package:proyecto_chachipistachi_dnd/service/monster_ability_registry_service.dart';
 import 'dart:convert';
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
@@ -658,14 +659,18 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
             ),
             const Divider(),
           ],
-          if (widget.isPublicView)
+          if (widget.isPublicView) ...[
             ListTile(
               leading: const Icon(Icons.download, color: Colors.blue),
               title: Text(AppLocalizations.of(context)!.saveToMyBestiary),
               onTap: () async {
                 Navigator.pop(context);
                 try {
+                  // Guardar el monstruo localmente
                   await MonsterStorageService().saveMonster(_currentMonster!);
+                  // Añadir sus habilidades al registro local para el generador
+                  await MonsterAbilityRegistryService().addMonsterToRegistry(_currentMonster!);
+
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(AppLocalizations.of(context)!.creatureSaved)),
@@ -680,6 +685,15 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
                 }
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.report, color: Colors.red),
+              title: Text(AppLocalizations.of(context)!.report),
+              onTap: () {
+                Navigator.pop(context);
+                _showReportDialog();
+              },
+            ),
+          ],
           if (widget.monster != null && !widget.isPublicView)
             ListTile(
               leading: const Icon(Icons.public),
@@ -788,6 +802,54 @@ class _MonsterDetailScreenState extends State<MonsterDetailScreen> {
         );
       }
     }
+  }
+
+  void _showReportDialog() {
+    final l10n = AppLocalizations.of(context)!;
+    final controller = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.reportReason),
+        content: TextField(
+          controller: controller,
+          maxLines: 3,
+          decoration: InputDecoration(
+            hintText: l10n.writeReason,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final reason = controller.text.trim();
+              if (reason.isEmpty) return;
+
+              Navigator.pop(context);
+              try {
+                await MonsterStorageService().reportMonster(_currentMonster!, reason);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(l10n.reportSuccess)),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Error: $e")),
+                  );
+                }
+              }
+            },
+            child: Text(l10n.report),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showJsonExportDialog(String jsonStr) {

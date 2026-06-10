@@ -7,14 +7,18 @@ import 'package:proyecto_chachipistachi_dnd/service/monster_storage_service.dart
 import 'package:proyecto_chachipistachi_dnd/service/monster_ability_registry_service.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/monster_detail_screen.dart';
 
-/// Pantalla unificada para mostrar listas de monstruos (API o Repositorio Local).
+/// Pantalla unificada para mostrar listas de monstruos (API, Repositorio Local o Bestiario Público).
 /// Permite buscar, filtrar por múltiples criterios (tipo, tamaño, alineamiento,
 /// vulnerabilidades, resistencias e inmunidades) y navegar a los detalles.
 class MonsterListScreen extends StatefulWidget {
-  final bool
-  isLocal; // Define el origen de datos: true para local, false para API.
+  final bool isLocal; // Define el origen de datos: local o API.
+  final bool isPublic; // Define si se está consultando el bestiario público.
 
-  const MonsterListScreen({super.key, required this.isLocal});
+  const MonsterListScreen({
+    super.key,
+    this.isLocal = false,
+    this.isPublic = false,
+  });
 
   @override
   State<MonsterListScreen> createState() => _MonsterListScreenState();
@@ -138,13 +142,17 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
     _cargarDatos(); // Carga inicial de datos al instanciar la pantalla.
   }
 
-  /// Gestiona la obtención de datos según el origen (Local o API).
+  /// Gestiona la obtención de datos según el origen (Local, API o Público).
   /// Soporta refresco forzado y aplica los filtros definidos en el estado.
   void _cargarDatos({bool forceRefresh = false}) {
     setState(() {
-      if (widget.isLocal) {
-        // Lógica para el Repositorio Local (filtrado manual en memoria).
-        _futureData = MonsterStorageService().getMonsters().then((list) {
+      if (widget.isLocal || widget.isPublic) {
+        // Lógica para Repositorio Local o Bestiario Público.
+        final fetchMethod = widget.isPublic
+            ? MonsterStorageService().getPublicMonsters()
+            : MonsterStorageService().getMonsters();
+
+        _futureData = fetchMethod.then((list) {
           var filteredList = list.where((m) {
             // Filtro por nombre.
             final nameMatch = (m.name ?? "").toLowerCase().contains(
@@ -378,42 +386,50 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
     _dialogTotal = results.length;
 
     // Mostrar modal informativo con barra de progreso.
+    // Se usa PopScope con canPop: false para impedir cerrar el diálogo manualmente.
     final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            _dialogSetState = setDialogState;
-            final double percentage = _dialogTotal > 0
-                ? _dialogProgress / _dialogTotal
-                : 0.0;
-
-            return AlertDialog(
-              title: Text(l10n.buildingRegistry),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    l10n.syncingBestiary,
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                  const SizedBox(height: 20),
-                  LinearProgressIndicator(value: percentage),
-                  const SizedBox(height: 10),
-                  Text(l10n.creaturesProcessed(_dialogProgress, _dialogTotal)),
-                ],
-              ),
-            );
-          },
+        return PopScope(
+          canPop: false, // Impide cerrar con el botón atrás
+          child: StatefulBuilder(
+            builder: (context, setDialogState) {
+              _dialogSetState = setDialogState;
+              final double percentage = _dialogTotal > 0
+                  ? _dialogProgress / _dialogTotal
+                  : 0.0;
+  
+              return AlertDialog(
+                title: Text(l10n.buildingRegistry),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      l10n.syncingBestiary,
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                    const SizedBox(height: 20),
+                    LinearProgressIndicator(value: percentage),
+                    const SizedBox(height: 10),
+                    Text(l10n.creaturesProcessed(_dialogProgress, _dialogTotal)),
+                  ],
+                ),
+              );
+            },
+          ),
         );
       },
     );
 
+    // Obtener criaturas locales para incluirlas en el registro
+    final List<Monster> localMonsters = await MonsterStorageService().getMonsters();
+
     // Iniciar proceso de indexación de habilidades.
     await registryService.buildRegistry(
       results,
+      localMonsters: localMonsters,
       onProgress: (current, total) {
         if (_dialogSetState != null) {
           _dialogSetState!(() {
@@ -436,14 +452,18 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    String title = l10n.bestiaryApi;
+    if (widget.isLocal) title = l10n.localRepository;
+    if (widget.isPublic) title = l10n.publicBestiary;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isLocal ? l10n.localRepository : l10n.bestiaryApi),
+        title: Text(title),
         actions: [
           // Botón de actualización: ofrece opciones de limpieza de caché en modo API.
           TextButton.icon(
             onPressed: () {
-              if (widget.isLocal) {
+              if (widget.isLocal || widget.isPublic) {
                 _cargarDatos();
               } else {
                 showDialog(
@@ -600,7 +620,10 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
                                 l10n.type,
                                 _selectedType,
                                 _types,
-                                (v) => setState(() => _selectedType = v!),
+                                (v) {
+                                  setState(() => _selectedType = v!);
+                                  _cargarDatos();
+                                },
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -609,7 +632,10 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
                                 l10n.size,
                                 _selectedSize,
                                 _sizes,
-                                (v) => setState(() => _selectedSize = v!),
+                                (v) {
+                                  setState(() => _selectedSize = v!);
+                                  _cargarDatos();
+                                },
                               ),
                             ),
                           ],
@@ -622,7 +648,10 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
                                 l10n.alignment,
                                 _selectedAlign,
                                 _alignments,
-                                (v) => setState(() => _selectedAlign = v!),
+                                (v) {
+                                  setState(() => _selectedAlign = v!);
+                                  _cargarDatos();
+                                },
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -631,7 +660,10 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
                                 l10n.cr,
                                 _selectedCR,
                                 _crs,
-                                (v) => setState(() => _selectedCR = v!),
+                                (v) {
+                                  setState(() => _selectedCR = v!);
+                                  _cargarDatos();
+                                },
                               ),
                             ),
                           ],
@@ -641,44 +673,40 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
                           l10n.sortBy,
                           _sortBy,
                           _sortOptions,
-                          (v) => setState(() => _sortBy = v!),
+                          (v) {
+                            setState(() => _sortBy = v!);
+                            _cargarDatos();
+                          },
                         ),
                         const SizedBox(height: 12),
                         _sectionTitle(l10n.vulnerabilities),
                         _buildMultiSelectChips(
                           _damageTypes,
                           _selectedVulns,
-                          (list) => setState(() => _selectedVulns = list),
+                          (list) {
+                            setState(() => _selectedVulns = list);
+                            _cargarDatos();
+                          },
                         ),
                         const SizedBox(height: 8),
                         _sectionTitle(l10n.resistances),
                         _buildMultiSelectChips(
                           _damageTypes,
                           _selectedRes,
-                          (list) => setState(() => _selectedRes = list),
+                          (list) {
+                            setState(() => _selectedRes = list);
+                            _cargarDatos();
+                          },
                         ),
                         const SizedBox(height: 8),
                         _sectionTitle(l10n.immunities),
                         _buildMultiSelectChips(
                           _damageTypes,
                           _selectedImms,
-                          (list) => setState(() => _selectedImms = list),
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _cargarDatos,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.primary,
-                              foregroundColor: Theme.of(
-                                context,
-                              ).colorScheme.onPrimary,
-                            ),
-                            child: Text(l10n.applyFilters),
-                          ),
+                          (list) {
+                            setState(() => _selectedImms = list);
+                            _cargarDatos();
+                          },
                         ),
                         const SizedBox(height: 10),
                       ],
@@ -716,7 +744,7 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
           return Center(child: Text("Error: ${snapshot.error}"));
         }
 
-        final List results = widget.isLocal
+        final List results = (widget.isLocal || widget.isPublic)
             ? snapshot.data
             : (snapshot.data as MonsterList).results ?? [];
         if (results.isEmpty) {
@@ -729,7 +757,7 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
           itemCount: results.length,
           itemBuilder: (context, index) {
             final item = results[index];
-            if (widget.isLocal) {
+            if (widget.isLocal || widget.isPublic) {
               final Monster m = item;
               return _buildMonsterCard(
                 m.name ?? "",
@@ -832,7 +860,7 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
     );
   }
 
-  /// Tarjeta de visualización para monstruos del repositorio local (incluye botón borrar).
+  /// Tarjeta de visualización para monstruos del repositorio local o público.
   Widget _buildMonsterCard(
     String name,
     String size,
@@ -841,6 +869,7 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
     int index,
     String? image,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       child: ListTile(
@@ -849,13 +878,34 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
         subtitle: Text(
           "$size $type, CR: ${monster.challengeRating ?? '?'}\n${monster.alignment}",
         ),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete, color: Colors.redAccent),
-          onPressed: () async {
-            await MonsterStorageService().deleteMonster(index);
-            _cargarDatos();
-          },
-        ),
+        trailing: widget.isPublic
+            ? IconButton(
+                icon: const Icon(Icons.download, color: Colors.blue),
+                onPressed: () async {
+                  try {
+                    await MonsterStorageService().saveMonster(monster);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(l10n.creatureSaved)),
+                      );
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Error al descargar: $e")),
+                      );
+                    }
+                  }
+                },
+                tooltip: l10n.download,
+              )
+            : IconButton(
+                icon: const Icon(Icons.delete, color: Colors.redAccent),
+                onPressed: () async {
+                  await MonsterStorageService().deleteMonster(index);
+                  _cargarDatos();
+                },
+              ),
         onTap: () async {
           final updated = await Navigator.push<bool>(
             context,
@@ -863,11 +913,13 @@ class _MonsterListScreenState extends State<MonsterListScreen> {
               builder: (context) => MonsterDetailScreen(
                 monsterName: name,
                 monster: monster,
-                monsterIndex: index,
+                monsterIndex: widget.isLocal ? index : null,
+                showActions: !widget.isPublic,
+                isPublicView: widget.isPublic,
               ),
             ),
           );
-          if (mounted && updated == true) {
+          if (mounted && updated == true && widget.isLocal) {
             _cargarDatos();
           }
         },

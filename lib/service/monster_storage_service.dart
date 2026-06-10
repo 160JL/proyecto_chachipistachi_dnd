@@ -42,10 +42,21 @@ class MonsterStorageService {
 
   /// Comparte una criatura en el repositorio público de la comunidad.
   /// Añade metadatos del autor y fecha de publicación.
+  /// Si la imagen es una ruta local, se elimina antes de subir para evitar enlaces rotos.
   Future<void> shareMonsterPublicly(Monster monster) async {
     final publicCollection = _firestore.collection('public_monsters');
     
     final data = monster.toJson();
+
+    // Lógica para filtrar imágenes locales
+    String? imagePath = data['image'];
+    if (imagePath != null && imagePath.isNotEmpty) {
+      bool isWebImage = imagePath.startsWith('http') || imagePath.startsWith('/api');
+      if (!isWebImage) {
+        data['image'] = null; // Eliminamos ruta local
+      }
+    }
+
     data['sharedBy'] = _auth.currentUser?.displayName ?? "Anónimo";
     data['sharedByUid'] = _uid;
     data['sharedAt'] = FieldValue.serverTimestamp(); // Sello de tiempo del servidor.
@@ -121,5 +132,30 @@ class MonsterStorageService {
       monstersJson.removeAt(index);
       await prefs.setStringList(_storageKey, monstersJson);
     }
+  }
+
+  /// Registra un reporte de una criatura pública en Firestore.
+  /// También crea un documento en la colección 'mail' para disparar una notificación por correo.
+  Future<void> reportMonster(Monster monster, String reason) async {
+    final reportId = DateTime.now().millisecondsSinceEpoch.toString();
+    final timestamp = FieldValue.serverTimestamp();
+
+    // 1. Guardar el reporte detallado
+    await _firestore.collection('reports').doc(reportId).set({
+      'monsterId': monster.localId,
+      'monsterName': monster.name,
+      'reporterUid': _uid ?? 'guest',
+      'reason': reason,
+      'timestamp': timestamp,
+    });
+
+    // 2. Crear documento de correo para la extensión 'Trigger Email'
+    await _firestore.collection('mail').add({
+      'to': 'admin@chachipistachi.dnd', // Reemplazar con el correo del admin real
+      'message': {
+        'subject': 'NUEVO REPORTE DE CRIATURA: ${monster.name}',
+        'text': 'Se ha reportado la criatura "${monster.name}" (ID: ${monster.localId}).\n\nMotivo del reporte:\n$reason\n\nReportado por: ${_uid ?? "Invitado"}',
+      },
+    });
   }
 }

@@ -12,6 +12,21 @@ class ChangelogEntry {
 
 const List<ChangelogEntry> appChangelogES = [
   ChangelogEntry(
+    version: "0.9.0",
+    date: "2026-05-19",
+    changes: [
+      "Mejora del Registro de Habilidades: proceso persistente y obligatorio (no se puede cerrar hasta finalizar).",
+      "Sincronización total: las habilidades de criaturas creadas o descargadas del Bestiario Público se añaden automáticamente al registro local.",
+      "Regeneración Dual: el proceso de reconstrucción ahora procesa tanto la API oficial como tu Repositorio Local.",
+      "Gestión de estado mejorada: el registro solo se considera válido al completarse al 100%.",
+      "Filtros automáticos en el Bestiario: la lista se actualiza instantáneamente al cambiar cualquier criterio.",
+      "Sistema de reportes: los usuarios pueden informar de contenido inapropiado con notificaciones por correo al administrador.",
+      "Sistema de seguridad y bloqueos: gestión de acceso restringido a usuarios con visualización del motivo del bloqueo.",
+      "Optimización del inicio de sesión automático mediante persistencia nativa de Firebase.",
+      "Pequeños ajustes de diseño en el Gestor de Iniciativa para mejorar la adaptabilidad.",
+    ],
+  ),
+  ChangelogEntry(
     version: "0.8.0",
     date: "2026-05-18",
     changes: [
@@ -72,6 +87,21 @@ const List<ChangelogEntry> appChangelogES = [
 ];
 
 const List<ChangelogEntry> appChangelogEN = [
+  ChangelogEntry(
+    version: "0.9.0",
+    date: "2026-05-19",
+    changes: [
+      "Skill Registry Improvements: persistent and mandatory process (cannot be closed until finished).",
+      "Full Synchronization: skills from created or downloaded community creatures are automatically added to the local registry.",
+      "Dual Regeneration: the reconstruction process now processes both the official API and your Local Repository.",
+      "Improved state management: the registry is only considered valid when 100% complete.",
+      "Automatic filtering in Bestiary: the list updates instantly when any criteria change.",
+      "Reporting system: users can report inappropriate content with email notifications to the administrator.",
+      "Security and blocking system: restricted access management for users with block reason display.",
+      "Optimized automatic login using native Firebase persistence.",
+      "Minor design adjustments in the Initiative Tracker for better adaptability.",
+    ],
+  ),
   ChangelogEntry(
     version: "0.8.0",
     date: "2026-05-18",

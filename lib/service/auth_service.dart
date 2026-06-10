@@ -10,18 +10,29 @@ class AuthService extends ChangeNotifier {
   // Instancia única de FirebaseAuth para la gestión de usuarios.
   final FirebaseAuth _auth = FirebaseAuth.instance;
   
-  // Instancia de Firestore para metadatos de usuario (VIP).
+  // Instancia de Firestore para metadatos de usuario (VIP, Bloqueos).
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Instancia para gestionar el inicio de sesión con cuentas de Google.
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
+  // Estado del usuario invitado
   bool _isGuest = false;
   bool get isGuest => _isGuest;
 
+  // Estado VIP (Sincronizado con Firestore)
   bool _isVip = false;
   bool get isVip => _isVip;
 
+  // Estado de Bloqueo (Sincronizado con Firestore)
+  bool _isBlocked = false;
+  bool get isBlocked => _isBlocked;
+
+  // Motivo del bloqueo (Sincronizado con Firestore)
+  String? _blockReason;
+  String? get blockReason => _blockReason;
+
+  // Clave para persistencia local de la sesión
   static const String _sessionKey = 'keep_logged_in';
 
   AuthService() {
@@ -31,41 +42,55 @@ class AuthService extends ChangeNotifier {
       if (user != null) {
         _loadUserMetadata(user.uid);
       } else if (!_isGuest) {
+        // Reset de estados si no hay usuario ni es invitado
         _isVip = false;
+        _isBlocked = false;
+        _blockReason = null;
         notifyListeners();
       }
     });
   }
 
-  /// Carga metadatos del usuario desde Firestore (como el estado VIP).
+  /// Carga metadatos del usuario desde Firestore (VIP, Bloqueo).
   Future<void> _loadUserMetadata(String uid) async {
     try {
       final doc = await _firestore.collection('users').doc(uid).get();
       if (doc.exists) {
-        _isVip = doc.data()?['isVip'] ?? false;
+        final data = doc.data()!;
+        _isVip = data['isVip'] ?? false;
+        _isBlocked = data['isBlocked'] ?? false;
+        _blockReason = data['motivoBloqueo'];
       } else {
         // Si el documento no existe, lo creamos con valores por defecto
-        await _firestore.collection('users').doc(uid).set({'isVip': false});
+        await _firestore.collection('users').doc(uid).set({
+          'isVip': false,
+          'isBlocked': false,
+          'motivoBloqueo': null,
+        });
         _isVip = false;
+        _isBlocked = false;
+        _blockReason = null;
       }
       notifyListeners();
     } catch (e) {
-      debugPrint("Error cargando metadatos de usuario: $e");
+      debugPrint("Error cargando metadatos de usuario desde Firestore: $e");
     }
   }
 
   /// Verifica si existe una sesión persistente al iniciar el servicio.
+  /// Si "Mantener sesión" NO está marcado, fuerza el cierre de sesión al abrir.
   Future<void> _checkPersistence() async {
     final prefs = await SharedPreferences.getInstance();
     final keepLoggedIn = prefs.getBool(_sessionKey) ?? false;
     
-    // Si NO marcó el tick, cerramos sesión al abrir para forzar el login
+    // Si NO marcó el tick, cerramos sesión en Firebase para forzar el login manual
     if (!keepLoggedIn) {
       await signOut(clearPersistence: false);
     }
+    // Si SÍ lo marcó, Firebase Auth gestiona el inicio automático internamente.
   }
 
-  /// Define si se debe mantener la sesión iniciada.
+  /// Define si se debe mantener la sesión iniciada en SharedPreferences.
   Future<void> setPersistence(bool keep) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_sessionKey, keep);
@@ -74,13 +99,15 @@ class AuthService extends ChangeNotifier {
   /// Obtiene un flujo (Stream) que emite cambios cada vez que el usuario inicia o cierra sesión.
   Stream<User?> get userStream => _auth.authStateChanges();
 
-  /// Retorna la información del usuario actualmente autenticado, si existe.
+  /// Retorna la información del usuario actualmente autenticado en Firebase.
   User? get currentUser => _auth.currentUser;
 
-  /// Inicia sesión como invitado (local).
+  /// Inicia sesión como invitado (local, sin Firebase).
   void signInAsGuest() {
     _isGuest = true;
     _isVip = false;
+    _isBlocked = false;
+    _blockReason = null;
     notifyListeners();
   }
 
@@ -109,7 +136,7 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  /// Inicia sesión utilizando correo y contraseña.
+  /// Inicia sesión utilizando correo y contraseña clásicos.
   Future<UserCredential?> signInWithEmail(String email, String password) async {
     try {
       final result = await _auth.signInWithEmailAndPassword(email: email, password: password);
@@ -139,7 +166,8 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  /// Cierra definitivamente la sesión.
+  /// Cierra definitivamente la sesión del usuario actual.
+  /// [clearPersistence] indica si también debe borrar el tick de "Mantener sesión".
   Future<void> signOut({bool clearPersistence = true}) async {
     try {
       if (clearPersistence) {
@@ -151,6 +179,8 @@ class AuthService extends ChangeNotifier {
       await _auth.signOut();
       _isGuest = false;
       _isVip = false;
+      _isBlocked = false;
+      _blockReason = null;
       notifyListeners();
     } catch (e) {
       debugPrint("Error al cerrar sesión: $e");
@@ -169,7 +199,7 @@ class AuthService extends ChangeNotifier {
       _isVip = newVipStatus;
       notifyListeners();
     } catch (e) {
-      debugPrint("Error al actualizar estado VIP: $e");
+      debugPrint("Error al actualizar estado VIP en Firestore: $e");
     }
   }
 }

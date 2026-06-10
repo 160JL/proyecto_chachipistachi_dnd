@@ -10,8 +10,8 @@ import 'package:proyecto_chachipistachi_dnd/pantallas/monster_list_screen.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/monster_create_screen.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/combat_list_screen.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/login_screen.dart';
-import 'package:proyecto_chachipistachi_dnd/pantallas/public_bestiary_screen.dart';
 import 'package:proyecto_chachipistachi_dnd/pantallas/dashboard_screen.dart';
+import 'package:proyecto_chachipistachi_dnd/pantallas/blocked_user_screen.dart';
 import 'package:proyecto_chachipistachi_dnd/providers/battle_queue_provider.dart';
 import 'package:proyecto_chachipistachi_dnd/service/auth_service.dart';
 
@@ -192,10 +192,10 @@ class MyApp extends StatelessWidget {
       routes: {
         "/dashboard": (context) => const DashboardScreen(),
         "/battlescreen": (context) => const AuthWrapper(child: BattleScreen()),
-        "/api": (context) => const AuthWrapper(child: MonsterListScreen(isLocal: false)),
+        "/api": (context) => const AuthWrapper(child: MonsterListScreen(isLocal: false, isPublic: false)),
         "/create": (context) => const AuthWrapper(child: MonsterCreateScreen()),
-        "/repository": (context) => const AuthWrapper(child: MonsterListScreen(isLocal: true)),
-        "/public": (context) => const AuthWrapper(child: PublicBestiaryScreen()),
+        "/repository": (context) => const AuthWrapper(child: MonsterListScreen(isLocal: true, isPublic: false)),
+        "/public": (context) => const AuthWrapper(child: MonsterListScreen(isLocal: false, isPublic: true)),
         "/initiative": (context) => const AuthWrapper(child: CombatListScreen()),
       },
     );
@@ -209,18 +209,30 @@ class AuthWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
+
+    // Escuchamos el estado del usuario (Firebase User o Invitado)
     return StreamBuilder<User?>(
       stream: authService.userStream,
       builder: (context, snapshot) {
+        // Estado de carga inicial
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
         
-        // Si el usuario está autenticado en Firebase o es invitado
+        // El usuario está identificado (Firebase o Invitado)
         if (snapshot.hasData || authService.isGuest) {
+          
+          // --- NUEVA LÓGICA DE BLOQUEO ---
+          // Si el usuario está bloqueado en Firestore, redirigir a la pantalla de bloqueo
+          if (authService.isBlocked) {
+            return const BlockedUserScreen();
+          }
+
+          // Si todo está correcto, vamos al Dashboard o a la pantalla solicitada (child)
           return child ?? const DashboardScreen();
         }
         
+        // Si no hay sesión, vamos a la pantalla de Login
         return const LoginScreen();
       },
     );

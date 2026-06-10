@@ -1219,6 +1219,60 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Añadir a Batalla'**
   String get addToBattle;
+
+  /// No description provided for @report.
+  ///
+  /// In es, this message translates to:
+  /// **'Reportar'**
+  String get report;
+
+  /// No description provided for @reportReason.
+  ///
+  /// In es, this message translates to:
+  /// **'Motivo del reporte'**
+  String get reportReason;
+
+  /// No description provided for @reportSuccess.
+  ///
+  /// In es, this message translates to:
+  /// **'Reporte enviado con éxito'**
+  String get reportSuccess;
+
+  /// No description provided for @writeReason.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe el motivo aquí...'**
+  String get writeReason;
+
+  /// No description provided for @accountBlocked.
+  ///
+  /// In es, this message translates to:
+  /// **'CUENTA BLOQUEADA'**
+  String get accountBlocked;
+
+  /// No description provided for @blockedMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu acceso a la aplicación ha sido restringido.'**
+  String get blockedMessage;
+
+  /// No description provided for @blockReasonLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Motivo del bloqueo:'**
+  String get blockReasonLabel;
+
+  /// No description provided for @noReasonProvided.
+  ///
+  /// In es, this message translates to:
+  /// **'No se ha proporcionado un motivo específico.'**
+  String get noReasonProvided;
+
+  /// No description provided for @contactAdmin.
+  ///
+  /// In es, this message translates to:
+  /// **'Si crees que esto es un error, contacta con soporte.'**
+  String get contactAdmin;
 }
 
 class _AppLocalizationsDelegate

@@ -610,4 +610,32 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get addToBattle => 'Añadir a Batalla';
+
+  @override
+  String get report => 'Reportar';
+
+  @override
+  String get reportReason => 'Motivo del reporte';
+
+  @override
+  String get reportSuccess => 'Reporte enviado con éxito';
+
+  @override
+  String get writeReason => 'Escribe el motivo aquí...';
+
+  @override
+  String get accountBlocked => 'CUENTA BLOQUEADA';
+
+  @override
+  String get blockedMessage => 'Tu acceso a la aplicación ha sido restringido.';
+
+  @override
+  String get blockReasonLabel => 'Motivo del bloqueo:';
+
+  @override
+  String get noReasonProvided => 'No se ha proporcionado un motivo específico.';
+
+  @override
+  String get contactAdmin =>
+      'Si crees que esto es un error, contacta con soporte.';
 }

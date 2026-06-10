@@ -307,5 +307,14 @@
   "statBlockLabel": "Ficha de estadísticas D&D 5e",
   "exportJson": "Exportar como JSON",
   "exportPng": "Exportar como PNG",
-  "addToBattle": "Añadir a Batalla"
+  "addToBattle": "Añadir a Batalla",
+  "report": "Reportar",
+  "reportReason": "Motivo del reporte",
+  "reportSuccess": "Reporte enviado con éxito",
+  "writeReason": "Escribe el motivo aquí...",
+  "accountBlocked": "CUENTA BLOQUEADA",
+  "blockedMessage": "Tu acceso a la aplicación ha sido restringido.",
+  "blockReasonLabel": "Motivo del bloqueo:",
+  "noReasonProvided": "No se ha proporcionado un motivo específico.",
+  "contactAdmin": "Si crees que esto es un error, contacta con soporte."
 }

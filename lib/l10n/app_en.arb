@@ -307,5 +307,14 @@
   "statBlockLabel": "D&D 5e Stat Block",
   "exportJson": "Export as JSON",
   "exportPng": "Export as PNG",
-  "addToBattle": "Add to Battle"
+  "addToBattle": "Add to Battle",
+  "report": "Report",
+  "reportReason": "Report reason",
+  "reportSuccess": "Report sent successfully",
+  "writeReason": "Write the reason here...",
+  "accountBlocked": "ACCOUNT BLOCKED",
+  "blockedMessage": "Your access to the application has been restricted.",
+  "blockReasonLabel": "Reason for the block:",
+  "noReasonProvided": "No specific reason provided.",
+  "contactAdmin": "If you believe this is an error, please contact support."
 }
